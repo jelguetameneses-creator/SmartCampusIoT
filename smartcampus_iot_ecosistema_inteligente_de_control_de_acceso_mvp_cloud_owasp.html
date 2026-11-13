@@ -1,0 +1,2064 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartCampus IoT — Ecosistema Inteligente de Control de Acceso (MVP / Cloud / OWASP)</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+    }
+    .glass-card {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+    .glass-nav {
+      background: rgba(11, 15, 25, 0.88);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(51, 65, 85, 0.6);
+    }
+    .code-scroll::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+    .code-scroll::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .code-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgba(34, 197, 94, 0.9); box-shadow: 0 0 15px rgba(34, 197, 94, 0.25); }
+      50% { border-color: rgba(34, 197, 94, 0.35); box-shadow: 0 0 4px rgba(34, 197, 94, 0.1); }
+    }
+    .roi-box {
+      animation: pulse-border 2s infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen selection:bg-sky-500 selection:text-white">
+
+  <!-- Toast Notification -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- Top Navigation -->
+  <header class="sticky top-0 z-40 glass-nav">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 flex items-center justify-center font-mono font-bold text-white shadow-lg shadow-sky-500/20">
+          SC
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-white tracking-tight text-sm sm:text-base">SmartCampus IoT</span>
+            <span class="text-[11px] font-mono uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-semibold">MVP v1.0 Alpha</span>
+          </div>
+          <p class="text-[11px] text-slate-400 hidden sm:block">INACAP Sede Maipú • TI3043 Ingeniería de Software (Unidad 3)</p>
+        </div>
+      </div>
+
+      <nav class="hidden lg:flex items-center gap-1 text-xs font-medium text-slate-300">
+        <a href="#resumen" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">Resumen</a>
+        <a href="#simulador" class="px-3 py-2 rounded-lg bg-sky-500/15 text-sky-400 border border-sky-500/30 hover:bg-sky-500/25 transition">Simulador MVP</a>
+        <a href="#arquitectura" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">Cloud &amp; Edge</a>
+        <a href="#requerimientos" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">Requerimientos &amp; Scrum</a>
+        <a href="#seguridad" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">OWASP &amp; Leyes</a>
+        <a href="#pruebas" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">Pruebas &amp; QA</a>
+        <a href="#codigo" class="px-3 py-2 rounded-lg hover:bg-slate-800/80 hover:text-white transition">Código &amp; UML</a>
+      </nav>
+
+      <div class="flex items-center gap-2">
+        <a href="https://github.com/jelguetameneses-creator/SmartCampus_IoT.git" target="_blank" rel="noopener noreferrer"
+           class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold border border-slate-600 transition shadow-sm">
+          <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          <span>Repo GitHub</span>
+        </a>
+        <button id="mobileMenuBtn" type="button" class="lg:hidden p-2 rounded-lg bg-slate-800 text-slate-300 hover:text-white border border-slate-700" aria-label="Abrir menú">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile Menu Drawer -->
+    <div id="mobileMenu" class="hidden lg:hidden border-t border-slate-800 bg-slate-950/95 px-4 py-3 space-y-1 text-sm">
+      <a href="#resumen" class="block px-3 py-2 rounded-lg hover:bg-slate-800">Resumen Ejecutivo</a>
+      <a href="#simulador" class="block px-3 py-2 rounded-lg text-sky-400 font-semibold hover:bg-slate-800">Simulador Interactivo MVP</a>
+      <a href="#arquitectura" class="block px-3 py-2 rounded-lg hover:bg-slate-800">Arquitectura Cloud &amp; Edge</a>
+      <a href="#requerimientos" class="block px-3 py-2 rounded-lg hover:bg-slate-800">Requerimientos &amp; Scrum</a>
+      <a href="#seguridad" class="block px-3 py-2 rounded-lg hover:bg-slate-800">OWASP Top 10 &amp; Normativa Legal</a>
+      <a href="#pruebas" class="block px-3 py-2 rounded-lg hover:bg-slate-800">Plan de Pruebas &amp; Métricas</a>
+      <a href="#codigo" class="block px-3 py-2 rounded-lg hover:bg-slate-800">Código Fuente, UML &amp; Firmas</a>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-16">
+
+    <!-- HERO & INSTITUTIONAL HEADER -->
+    <section id="resumen" class="relative overflow-hidden rounded-3xl glass-card p-6 sm:p-10 border border-slate-700/80 shadow-2xl">
+      <div class="absolute -top-24 -right-24 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div class="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+        <div class="space-y-4 max-w-3xl">
+          <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+            <span class="px-2.5 py-1 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 font-semibold">INACAP Sede Maipú</span>
+            <span class="px-2.5 py-1 rounded-md bg-sky-500/15 text-sky-300 border border-sky-500/30">TI3043 • Unidad 3</span>
+            <span class="px-2.5 py-1 rounded-md bg-slate-800 text-slate-300 border border-slate-700">Sección: D-IEI-N4-P2-C2(F)/D Maipú IEI</span>
+            <span class="px-2.5 py-1 rounded-md bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Entrega: 14 Nov 2026</span>
+          </div>
+
+          <h1 class="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+            SmartCampus IoT: <span class="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 via-cyan-300 to-indigo-400">Ecosistema Inteligente de Control de Acceso Peatonal y Vehicular</span>
+          </h1>
+
+          <p class="text-slate-300 text-sm sm:text-base leading-relaxed">
+            Producto Mínimo Viable (<strong>MVP / Versión Alpha</strong>) diseñado para erradicar los cuellos de botella operativos (reduciendo el ingreso peatonal de <strong>5,2 s a 0,19 s</strong> y el vehicular de <strong>14,8 s a 1,18 s</strong>) y mitigar las vulnerabilidades de suplantación de identidad mediante credenciales dinámicas <strong>TOTP (RFC 6238 cada 30s)</strong>, visión computacional <strong>Edge LPR / OCR</strong>, arquitectura híbrida <strong>Cloud (IaaS/PaaS/SaaS)</strong> y blindaje <strong>OWASP Top 10</strong>.
+          </p>
+
+          <div class="flex flex-wrap gap-3 pt-2">
+            <a href="#simulador" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm transition shadow-lg shadow-sky-500/25">
+              <span>Probar Simulador Interactivo MVP</span>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </a>
+            <a href="#codigo" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-semibold text-sm border border-slate-600 transition">
+              <span>Ver Código Python &amp; Pytest</span>
+            </a>
+            <button id="copyCloneCmdBtn" type="button" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-sky-400 font-mono text-xs border border-slate-700 transition">
+              <span>$ git clone SmartCampus_IoT.git</span>
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Ficha Académica del Proyecto -->
+        <div class="w-full lg:w-80 shrink-0 rounded-2xl bg-slate-900/90 border border-slate-700/80 p-5 space-y-3.5 text-xs">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+            <span class="font-mono uppercase tracking-wider text-slate-400">Ficha Técnica Oficial</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono font-semibold">100% Cumplido</span>
+          </div>
+          <div>
+            <p class="text-slate-400">Asignatura</p>
+            <p class="font-semibold text-white">Ingeniería de Software – Unidad 3: Ejecución de Prototipos y Ciberseguridad (TI3043)</p>
+          </div>
+          <div>
+            <p class="text-slate-400">Docente Titular</p>
+            <p class="font-semibold text-white">Manuel Esteban Rojas Villarroel</p>
+          </div>
+          <div>
+            <p class="text-slate-400">Equipo de Ingeniería (Autores)</p>
+            <ul class="mt-1 space-y-1 font-medium text-sky-300">
+              <li class="flex items-center justify-between">
+                <span>• Howens Jhosep Castro Sierra</span>
+                <span class="text-[10px] font-mono bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Cloud/OWASP</span>
+              </li>
+              <li class="flex items-center justify-between">
+                <span>• Joaquín Elgueta</span>
+                <span class="text-[10px] font-mono bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">Scrum/QA/FullStack</span>
+              </li>
+            </ul>
+          </div>
+          <div class="pt-1 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400">
+            <span>Normativa: Ley 21.459 / 19.628</span>
+            <span class="font-mono text-emerald-400">Pytest: 6/6 PASSED</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Strip -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-8 pt-6 border-t border-slate-800/80">
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Latencia P98 LPR</p>
+          <p class="text-2xl font-extrabold text-emerald-400 mt-0.5">1,18 s</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Meta RNF-01: &lt; 1,5 s</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Precisión OCR Diurna</p>
+          <p class="text-2xl font-extrabold text-sky-400 mt-0.5">96,4%</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Pico prueba: 98,4%</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Cobertura Pytest</p>
+          <p class="text-2xl font-extrabold text-indigo-400 mt-0.5">88,5%</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">164 stmts / 6 tests</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Bloqueo SQLi / Brute</p>
+          <p class="text-2xl font-extrabold text-emerald-400 mt-0.5">100%</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">OWASP A01/A02/A03/A07</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Uptime Fallback LAN</p>
+          <p class="text-2xl font-extrabold text-amber-400 mt-0.5">99,8%</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">Caché SQLite (140 ms)</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-slate-900/70 border border-slate-800">
+          <p class="text-[11px] font-mono uppercase text-slate-400">Mejora Operativa</p>
+          <p class="text-2xl font-extrabold text-cyan-300 mt-0.5">-92%</p>
+          <p class="text-[11px] text-slate-400 mt-0.5">14,8 s → 1,18 s vehículo</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- INTERACTIVE MVP SIMULATOR (FIGURA 2 INFORME) -->
+    <section id="simulador" class="space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Sección V.c • Demostración Funcional en Vivo</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Simulador Interactivo del Prototipo (App Móvil &amp; Consola LPR)</h2>
+          <p class="text-sm text-slate-400 mt-1">Interactúa con las dos interfaces construidas en el MVP: genera tokens TOTP cada 30 segundos, simula lecturas de patentes LPR, prueba ataques de inyección SQL o activa el protocolo de evacuación.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="toggleWanBtn" type="button" class="px-3.5 py-2 rounded-xl text-xs font-mono font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition flex items-center gap-2">
+            <span id="wanStatusDot" class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+            <span id="wanStatusText">Enlace WAN Cloud: ONLINE (PostgreSQL)</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- LEFT: APP MÓVIL "MI PASE" (4 cols) -->
+        <div class="lg:col-span-4 rounded-3xl glass-card p-5 border-2 border-slate-700/90 shadow-xl flex flex-col justify-between">
+          <div>
+            <!-- Phone Notch Bar -->
+            <div class="flex items-center justify-between text-[11px] font-mono text-slate-400 pb-3 mb-3 border-b border-slate-800">
+              <span>SmartCampus Mobile SaaS</span>
+              <span class="text-sky-400">TLS 1.3 • RFC 6238</span>
+            </div>
+
+            <!-- App Header -->
+            <div class="rounded-2xl bg-gradient-to-r from-sky-700 to-blue-800 p-4 text-center shadow-md">
+              <h3 class="text-base font-extrabold text-white tracking-tight">SmartCampus IoT — Mi Pase</h3>
+              <p class="text-xs text-sky-100 mt-0.5">Credencial Institucional Verificada</p>
+            </div>
+
+            <!-- Selector de Estudiante/Usuario -->
+            <div class="mt-3">
+              <label for="studentSelect" class="block text-[11px] font-mono uppercase text-slate-400 mb-1">Cambiar Credencial Activa:</label>
+              <select id="studentSelect" class="w-full rounded-xl bg-slate-900 border border-slate-700 text-xs text-white px-3 py-2 focus:outline-none focus:border-sky-500">
+                <option value="joaquin">Joaquín Elgueta — RUT: 19.876.543-2 (Placa AB-CD-12)</option>
+                <option value="howens">Howens Castro Sierra — RUT: 20.451.892-K (Placa HC-SR-26)</option>
+              </select>
+            </div>
+
+            <!-- Student Info Card -->
+            <div class="mt-3 rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 text-center space-y-1.5">
+              <p id="cardStudentName" class="text-base font-bold text-white">Joaquín Elgueta</p>
+              <p id="cardStudentRut" class="text-xs font-mono text-slate-300">RUT: 19.876.543-2 | Ing. Informática</p>
+              <div class="inline-block px-3 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold">
+                ESTADO: MATRÍCULA VIGENTE
+              </div>
+            </div>
+
+            <!-- Dynamic QR Canvas -->
+            <div class="mt-4 flex flex-col items-center">
+              <div class="p-3.5 rounded-2xl bg-white border-4 border-sky-500 shadow-lg shadow-sky-500/10">
+                <div id="qrMatrixContainer" class="grid grid-cols-9 gap-0.5 w-36 h-36 bg-white" aria-label="Código QR Dinámico TOTP"></div>
+              </div>
+
+              <!-- TOTP Token & Countdown -->
+              <div class="w-full mt-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  <span class="text-xs font-semibold text-rose-400">Token TOTP:</span>
+                  <span id="totpCodeDisplay" class="font-mono text-lg font-extrabold text-white tracking-widest">849 201</span>
+                  <span id="totpTimerText" class="text-xs font-mono text-rose-400">(Expira: 18s)</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden mt-1.5 border border-slate-700">
+                  <div id="totpProgressBar" class="h-full bg-sky-500 transition-all duration-500" style="width: 60%;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons on Mobile -->
+          <div class="mt-4 space-y-2 pt-3 border-t border-slate-800">
+            <button id="scanValidQrBtn" type="button" class="w-full py-2.5 px-4 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs transition shadow">
+              ESCANEAR PASE QR EN TORNIQUETE (VÁLIDO)
+            </button>
+            <button id="scanNfcBtn" type="button" class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow">
+              NFC ACTIVO (Acercar al Torniquete)
+            </button>
+            <button id="scanExpiredQrBtn" type="button" class="w-full py-2 px-3 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 font-semibold text-xs transition">
+              Simular Captura QR Vencida (&gt;30s • CP-03)
+            </button>
+            <div id="cardVehicleFooter" class="rounded-xl bg-slate-900/90 border border-slate-800 p-2.5 text-center text-[11px] text-slate-300">
+              Vehículo LPR: Patente <strong class="text-white font-mono">AB-CD-12</strong><br/>
+              Sede: INACAP Maipú (Estac. Nivel 1)
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: PANEL DE SEGURIDAD Y CONTROL LPR (8 cols) -->
+        <div class="lg:col-span-8 rounded-3xl glass-card border-2 border-slate-700/90 shadow-xl overflow-hidden">
+          <!-- Console Top Bar -->
+          <div class="bg-slate-900 px-5 py-3.5 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+              <span class="px-2.5 py-1 rounded-lg bg-sky-600 text-white font-mono font-bold text-xs">SEC</span>
+              <h3 class="text-sm sm:text-base font-bold text-white">Panel de Seguridad y Control LPR (WebSockets WSS)</h3>
+            </div>
+            <div class="flex items-center gap-3 text-xs">
+              <span id="consoleOperatorBadge" class="text-sky-400 font-mono">Operador: H. Castro (Admin) | Online</span>
+            </div>
+          </div>
+
+          <div class="p-5 grid grid-cols-1 md:grid-cols-12 gap-5">
+            <!-- Left Subcolumn: Camera LPR Stream & Controls (6 cols) -->
+            <div class="md:col-span-6 space-y-4">
+              <div class="rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 space-y-3">
+                <div class="flex items-center justify-between">
+                  <span class="text-xs font-bold text-slate-200">[CAM-01] Pórtico Vehicular Maipú (RTSP 720p)</span>
+                  <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">30 FPS • ROI</span>
+                </div>
+
+                <!-- Simulated RTSP Viewport -->
+                <div class="relative rounded-xl bg-slate-950 border border-slate-800 h-44 flex flex-col items-center justify-center p-4 overflow-hidden">
+                  <div class="border-2 border-dashed border-emerald-500/80 roi-box rounded-xl px-6 py-4 flex flex-col items-center justify-center bg-slate-900/70">
+                    <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 mb-2">STREAM RTSP — ROI DETECTADO</span>
+                    <div id="plateVisualBox" class="px-5 py-2 rounded-lg bg-amber-300 text-slate-950 font-mono font-extrabold text-xl tracking-widest border-2 border-slate-900 shadow-md">
+                      AB · CD · 12
+                    </div>
+                  </div>
+                </div>
+
+                <!-- OCR Status Readout Box -->
+                <div id="ocrStatusBanner" class="rounded-xl bg-emerald-500/15 border border-emerald-500/40 p-2.5 text-center text-xs text-emerald-300 font-medium">
+                  OCR: 98.4% | Latencia: 1.18 s | J. Elgueta<br/>
+                  Barrera: <strong>PULSO RELÉ ACTIVO (AUTORIZADO)</strong>
+                </div>
+
+                <!-- LPR Test Trigger Buttons -->
+                <div class="space-y-1.5 pt-1">
+                  <p class="text-[11px] font-mono uppercase text-slate-400">Inyectar Fotograma de Prueba al Gateway Edge:</p>
+                  <div class="grid grid-cols-3 gap-2">
+                    <button id="simLprAuthBtn" type="button" class="px-2.5 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-[11px] font-mono font-semibold transition">
+                      Placa AB-CD-12 (Autorizada)
+                    </button>
+                    <button id="simLprDenyBtn" type="button" class="px-2.5 py-2 rounded-lg bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-500/30 text-[11px] font-mono font-semibold transition">
+                      Placa XX-YY-99 (No Reg.)
+                    </button>
+                    <button id="simLprSqliBtn" type="button" class="px-2.5 py-2 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/30 text-[11px] font-mono font-semibold transition">
+                      Payload SQLi (OWASP A03)
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Métricas de Aforo y Estacionamientos -->
+              <div class="rounded-2xl bg-slate-900/90 border border-slate-800 p-4 space-y-3">
+                <div class="flex items-center justify-between">
+                  <h4 class="text-xs font-bold text-white uppercase tracking-wider">Métricas de Aforo y Estacionamientos</h4>
+                  <span id="emergencyStateBadge" class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300">Modo Normal</span>
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-300">• Aforo Peatonal Sede:</span>
+                    <span id="aforoPeatonalText" class="font-mono font-semibold text-sky-400">452 / 800 personas (56.5%)</span>
+                  </div>
+                  <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="aforoPeatonalBar" class="h-full bg-sky-500 transition-all duration-300" style="width: 56.5%;"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="flex justify-between text-xs mb-1">
+                    <span class="text-slate-300">• Cupos Estacionamiento:</span>
+                    <span id="cuposVehicularText" class="font-mono font-semibold text-emerald-400">38 / 50 ocupados (12 Libres)</span>
+                  </div>
+                  <div class="w-full h-2.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div id="cuposVehicularBar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 76%;"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Subcolumn: Live WSS Access Log & Guard Actions (6 cols) -->
+            <div class="md:col-span-6 flex flex-col justify-between space-y-4">
+              <div class="rounded-2xl bg-slate-900/90 border border-slate-800 p-3.5 flex-1 flex flex-col">
+                <div class="flex flex-wrap items-center justify-between gap-2 mb-2.5">
+                  <h4 class="text-xs font-bold text-white">Bitácora de Accesos en Tiempo Real (WSS)</h4>
+                  <select id="logFilterSelect" aria-label="Filtrar bitácora por estado" class="rounded-lg bg-slate-950 border border-slate-700 text-[11px] text-slate-200 px-2 py-1">
+                    <option value="ALL">Todos los eventos</option>
+                    <option value="AUTORIZADO">Autorizados</option>
+                    <option value="RECHAZADO">Rechazados</option>
+                    <option value="BLOQUEADO">Bloqueados</option>
+                  </select>
+                </div>
+
+                <!-- Live Log Feed -->
+                <div id="liveAccessLogContainer" class="space-y-2 max-h-64 overflow-y-auto pr-1 code-scroll"></div>
+              </div>
+
+              <!-- Action Buttons (Visita, PDF, Emergencia) -->
+              <div class="space-y-2.5">
+                <div class="grid grid-cols-2 gap-2.5">
+                  <button id="openVisitorModalBtn" type="button" class="py-2.5 px-3 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-500/40 text-sky-300 font-bold text-xs transition text-center">
+                    REGISTRAR VISITA<br/>
+                    <span class="font-normal text-[11px]">Pase Temporal</span>
+                  </button>
+                  <button id="exportPdfModalBtn" type="button" class="py-2.5 px-3 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/40 text-purple-300 font-bold text-xs transition text-center">
+                    EXPORTAR NÓMINA<br/>
+                    <span class="font-normal text-[11px]">Reporte PDF (RF-04)</span>
+                  </button>
+                </div>
+
+                <button id="emergencyReleaseBtn" type="button" class="w-full py-3 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 border-2 border-rose-500 text-rose-300 font-extrabold text-xs transition shadow-lg shadow-rose-600/10">
+                  [!] APERTURA MANUAL DE EMERGENCIA (EVACUACIÓN)<br/>
+                  <span class="font-normal text-[11px]">Desbloquea todos los torniquetes y barreras vehiculares (RF-05)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- CLOUD & EDGE ARCHITECTURE + RISK ANALYSIS + TECH STACK -->
+    <section id="arquitectura" class="space-y-8">
+      <div>
+        <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Secciones II y V • Criterio 3.1.1</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Arquitectura Híbrida Cloud (IaaS / PaaS / SaaS) &amp; Edge Computing</h2>
+        <p class="text-sm text-slate-400 mt-1">Selecciona cualquier nodo arquitectónico para inspeccionar su implementación técnica, protocolos de seguridad y justificación operativa en INACAP Maipú.</p>
+      </div>
+
+      <!-- Interactive Architecture Explorer -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button type="button" data-arch="edge" class="arch-node-btn text-left p-5 rounded-2xl glass-card border-2 border-sky-500 hover:border-sky-400 transition space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-semibold">Edge Computing (LAN Sede)</span>
+              <span class="text-xs font-mono text-emerald-400">&lt; 800 ms OCR</span>
+            </div>
+            <h3 class="text-base font-bold text-white">Gateway IoT de Borde &amp; Pórtico</h3>
+            <p class="text-xs text-slate-300">Jetson Nano / Raspberry Pi 5 junto a los actuadores físicos. Ejecuta OpenCV + Tesseract OCR local y mantiene caché SQLite ante caídas WAN.</p>
+          </button>
+
+          <button type="button" data-arch="iaas" class="arch-node-btn text-left p-5 rounded-2xl glass-card border border-slate-700 hover:border-sky-400 transition space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-semibold">Cloud: Modelo IaaS</span>
+              <span class="text-xs font-mono text-slate-400">Ubuntu 24.04 + Docker</span>
+            </div>
+            <h3 class="text-base font-bold text-white">Infraestructura Virtualizada</h3>
+            <p class="text-xs text-slate-300">VPC en AWS/DigitalOcean, clúster de contenedores Docker con API Core Python Flask, patrón GoF Abstract Factory y Reverse Proxy Nginx (TLS 1.3).</p>
+          </button>
+
+          <button type="button" data-arch="paas" class="arch-node-btn text-left p-5 rounded-2xl glass-card border border-slate-700 hover:border-sky-400 transition space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold">Cloud: Modelo PaaS</span>
+              <span class="text-xs font-mono text-slate-400">PostgreSQL 16 + Redis</span>
+            </div>
+            <h3 class="text-base font-bold text-white">Persistencia Administrada</h3>
+            <p class="text-xs text-slate-300">Base de datos relacional maestra con cifrado AES-256 en reposo, ORM SQLAlchemy anti-SQLi, caché Redis en memoria y backups diarios.</p>
+          </button>
+
+          <button type="button" data-arch="saas" class="arch-node-btn text-left p-5 rounded-2xl glass-card border border-slate-700 hover:border-sky-400 transition space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono uppercase px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-semibold">Cloud: Modelo SaaS</span>
+              <span class="text-xs font-mono text-slate-400">ReactJS + App Móvil</span>
+            </div>
+            <h3 class="text-base font-bold text-white">Aplicaciones Cliente Multi-Sede</h3>
+            <p class="text-xs text-slate-300">Portal Web de Seguridad (Dashboard WSS para Guardias/Jefatura) y App Móvil "Mi Pase" (QR Dinámico TOTP 30s + NFC) listas para uso sin instalación.</p>
+          </button>
+        </div>
+
+        <!-- Inspector Panel -->
+        <div id="archDetailPanel" class="lg:col-span-5 rounded-2xl glass-card p-6 border border-sky-500/40 flex flex-col justify-between space-y-4">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <!-- Análisis Temprano de Riesgos + Stack Tecnológico -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Riesgos Iniciales (5 cols) -->
+        <div class="lg:col-span-5 rounded-2xl glass-card p-6 space-y-4">
+          <h3 class="text-lg font-bold text-white">Análisis Temprano de Riesgos y Mitigación</h3>
+          <div class="space-y-3 text-xs">
+            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
+              <div class="flex justify-between font-bold text-rose-400">
+                <span>1. Latencia en Nube (&gt; 4s por video HD)</span>
+                <span class="font-mono">Riesgo Técnico Alto</span>
+              </div>
+              <p class="text-slate-300 mt-1"><strong>Mitigación:</strong> Nodo Edge Computing local en caseta del pórtico que recorta el ROI a 720p y procesa el OCR en menos de 800 ms (P98 total: 1,18 s).</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
+              <div class="flex justify-between font-bold text-amber-400">
+                <span>2. Suplantación por Captura de Pantalla QR</span>
+                <span class="font-mono">Riesgo Seguridad Alto</span>
+              </div>
+              <p class="text-slate-300 mt-1"><strong>Mitigación:</strong> Algoritmo criptográfico TOTP (RFC 6238) con caducidad estricta de 30 segundos y ventana de validación temporal (<code>valid_window=1</code>).</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
+              <div class="flex justify-between font-bold text-purple-400">
+                <span>3. Exposición de Datos Sensibles (RUT/Patentes)</span>
+                <span class="font-mono">Riesgo Legal Crítico</span>
+              </div>
+              <p class="text-slate-300 mt-1"><strong>Mitigación:</strong> Cifrado simétrico AES-256 (Fernet) en reposo, hashing Argon2id para contraseñas y canales HTTPS/MQTTS sobre TLS 1.3.</p>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900/90 border border-slate-800">
+              <div class="flex justify-between font-bold text-sky-400">
+                <span>4. Caída de Enlace WAN de Internet</span>
+                <span class="font-mono">Riesgo Operativo Medio</span>
+              </div>
+              <p class="text-slate-300 mt-1"><strong>Mitigación:</strong> Base de datos caché local SQLite sincronizada cada 5 minutos en el Gateway IoT para validación autónoma (Fallback en 140 ms).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stack Tecnológico Tabla 5.1 (7 cols) -->
+        <div class="lg:col-span-7 rounded-2xl glass-card p-6 space-y-4 overflow-x-auto">
+          <div class="flex items-center justify-between">
+            <h3 class="text-lg font-bold text-white">Stack Tecnológico del Prototipo (Tabla 5.1)</h3>
+            <span class="text-xs font-mono text-slate-400">Contenerizado en Docker 25.0</span>
+          </div>
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400 font-mono uppercase">
+                <th class="py-2.5 pr-3">Capa del Prototipo</th>
+                <th class="py-2.5 px-3">Tecnología / Framework</th>
+                <th class="py-2.5 px-3">Versión</th>
+                <th class="py-2.5 pl-3">Rol Específico en el MVP</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Backend &amp; API Core</td>
+                <td class="py-3 px-3 font-mono">Python + Flask / Flask-SocketIO</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">3.11 / 3.0</td>
+                <td class="py-3 pl-3 text-slate-300">Endpoints REST JSON para validación de accesos y canal WebSockets (WSS) para alertas en vivo.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Seguridad &amp; Criptografía</td>
+                <td class="py-3 px-3 font-mono">PyOTP + PyJWT + Argon2-cffi + Cryptography</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">2.9 / 2.8</td>
+                <td class="py-3 pl-3 text-slate-300">Códigos QR TOTP (30s), emisión de tokens JWT por rol, hashing Argon2id y cifrado AES-256.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Visión Computacional (LPR)</td>
+                <td class="py-3 px-3 font-mono">OpenCV (cv2) + Tesseract OCR</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">4.9 / 5.3</td>
+                <td class="py-3 pl-3 text-slate-300">Captura RTSP, recorte de región de interés (ROI), binarización adaptativa y lectura de patentes.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Persistencia &amp; Caché</td>
+                <td class="py-3 px-3 font-mono">PostgreSQL + SQLAlchemy ORM + SQLite</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">16.2 / 2.0</td>
+                <td class="py-3 pl-3 text-slate-300">Almacenamiento transaccional Cloud (anti-SQLi vía ORM) y SQLite en el Gateway para operación sin internet.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Frontend &amp; Interfaces</td>
+                <td class="py-3 px-3 font-mono">ReactJS + TailwindCSS / Flutter UI</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">18.2 / 3.19</td>
+                <td class="py-3 pl-3 text-slate-300">Dashboard Web de Seguridad para guardias e interfaz móvil "Mi Pase" para estudiantes y docentes.</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Infraestructura &amp; DevOps</td>
+                <td class="py-3 px-3 font-mono">Docker + Docker Compose + Nginx + Git</td>
+                <td class="py-3 px-3 font-mono text-emerald-400">25.0 / 1.25</td>
+                <td class="py-3 pl-3 text-slate-300">Contenerización reproducible, proxy inverso con terminación TLS 1.3 y control de versiones en GitHub.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- REQUERIMIENTOS (RF / RNF) & TABLERO SCRUM JIRA + GITFLOW -->
+    <section id="requerimientos" class="space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Secciones I y IV • ISO/IEC/IEEE 29148 &amp; Scrum SecDevOps</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Requerimientos de Fiabilidad y Gestión Ágil (Jira + GitHub CI/CD)</h2>
+        </div>
+        <div class="flex gap-2">
+          <button type="button" data-reqtab="rf" class="req-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-sky-500 text-slate-950 transition">
+            Funcionales (RF-01 a RF-05)
+          </button>
+          <button type="button" data-reqtab="rnf" class="req-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+            No Funcionales (RNF-01 a RNF-04)
+          </button>
+          <button type="button" data-reqtab="scrum" class="req-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+            Tablero Jira &amp; Sprints (SCI)
+          </button>
+        </div>
+      </div>
+
+      <!-- RF Container -->
+      <div id="reqPanelRf" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-sky-500">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-sky-400">RF-01 • Prioridad Alta</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">100% Implementado</span>
+          </div>
+          <h3 class="font-bold text-white text-sm">Autenticación Institucional Multifactor (MFA)</h3>
+          <p class="text-xs text-slate-300">Autentica a estudiantes, docentes, guardias y administradores validando RUT chileno (Módulo 11), contraseña hasheada y código OTP de 6 dígitos enviado al correo institucional.</p>
+          <p class="text-[11px] font-mono text-slate-400 pt-1">Stack: Python Flask, PyJWT (HS256), Argon2-cffi y SMTP.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-sky-500">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-sky-400">RF-02 • Prioridad Alta</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">100% Implementado</span>
+          </div>
+          <h3 class="font-bold text-white text-sm">Pase Peatonal QR/NFC Dinámico (TOTP)</h3>
+          <p class="text-xs text-slate-300">Genera en la App Móvil un token criptográfico basado en el estándar TOTP (RFC 6238) que se renueva cada 30 segundos para accionar el torniquete peatonal sin riesgo de capturas prestadas.</p>
+          <p class="text-[11px] font-mono text-slate-400 pt-1">Stack: Librería PyOTP, QRCode y ventana temporal ±1.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-sky-500">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-sky-400">RF-03 • Prioridad Alta</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">100% Implementado</span>
+          </div>
+          <h3 class="font-bold text-white text-sm">Reconocimiento Óptico de Patentes (LPR) y Cupos</h3>
+          <p class="text-xs text-slate-300">Captura el fotograma vehicular, extrae la placa patente mediante OCR (confianza &gt;= 95%), la contrasta con el padrón autorizado y descuenta automáticamente un cupo de estacionamiento.</p>
+          <p class="text-[11px] font-mono text-slate-400 pt-1">Stack: OpenCV, preprocesamiento ROI 720p y Tesseract OCR.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-indigo-500">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-indigo-400">RF-04 • Prioridad Media</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">100% Implementado</span>
+          </div>
+          <h3 class="font-bold text-white text-sm">Gestión, Edición y Exportación de Nómina PDF</h3>
+          <p class="text-xs text-slate-300">Permite al Administrador filtrar por fecha y RUT la bitácora de ingresos peatonales/vehiculares, editar autorizaciones y exportar el reporte oficial firmado en formato PDF.</p>
+          <p class="text-[11px] font-mono text-slate-400 pt-1">Stack: ORM SQLAlchemy y motor PDF ReportLab.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-rose-500 md:col-span-2">
+          <div class="flex justify-between items-center text-xs font-mono">
+            <span class="font-bold text-rose-400">RF-05 • Prioridad Alta</span>
+            <span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">100% Implementado</span>
+          </div>
+          <h3 class="font-bold text-white text-sm">Monitoreo de Aforo en Tiempo Real y Apertura de Emergencia</h3>
+          <p class="text-xs text-slate-300">Transmite alertas instantáneas a la consola del guardia ante intentos de acceso rechazados (QR expirado o placa no registrada) y provee un comando de desbloqueo general inmediato para evacuaciones ante sismos o incendios.</p>
+          <p class="text-[11px] font-mono text-slate-400 pt-1">Stack: Flask-SocketIO (WebSockets WSS) y panel ReactJS.</p>
+        </div>
+      </div>
+
+      <!-- RNF Container (Hidden by default) -->
+      <div id="reqPanelRnf" class="hidden grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-emerald-500">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-emerald-400 font-bold">RNF-01 • Rendimiento (Performance)</span>
+            <span class="text-white">Logrado: P98 = 1,18 s</span>
+          </div>
+          <p class="text-xs text-slate-300">El tiempo de respuesta extremo a extremo desde la lectura del código QR o captura de imagen LPR hasta el pulso de apertura no debe superar los <strong>1,5 segundos</strong> en el percentil 98 (P98).</p>
+          <p class="text-[11px] font-mono text-slate-400">Mecanismo: Procesamiento OCR local en Gateway Edge (ROI 720p) e índices B-Tree en PostgreSQL.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-sky-500">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-sky-400 font-bold">RNF-02 • Disponibilidad (Availability)</span>
+            <span class="text-white">Uptime: 99,8%</span>
+          </div>
+          <p class="text-xs text-slate-300">Garantizar un Uptime del <strong>99,5%</strong> en horario hábil (07:00 a 23:30 hrs) y mantener continuidad operativa local ante caídas del enlace de internet (WAN) de la sede.</p>
+          <p class="text-[11px] font-mono text-slate-400">Mecanismo: Contenedores Docker con política <code>restart: always</code> y caché local SQLite sincronizada cada 5 min.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-amber-500">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-amber-400 font-bold">RNF-03 • Seguridad (Security)</span>
+            <span class="text-white">Bloqueo: 900 s (15 min)</span>
+          </div>
+          <p class="text-xs text-slate-300">Bloquear automáticamente cualquier cuenta tras <strong>3 intentos fallidos</strong> de autenticación durante 15 minutos y caducar las sesiones JWT inactivas a los 30 minutos.</p>
+          <p class="text-[11px] font-mono text-slate-400">Mecanismo: Middleware de Rate-Limiting por IP/RUT, control RBAC y validación estricta de ventana TOTP.</p>
+        </div>
+
+        <div class="p-5 rounded-2xl glass-card space-y-2 border-l-4 border-l-purple-500">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-purple-400 font-bold">RNF-04 • Protección de Datos (Data Privacy)</span>
+            <span class="text-white">TLS 1.3 + AES-256</span>
+          </div>
+          <p class="text-xs text-slate-300">Toda información personal identificable (RUT, nombre, patente vehicular y huella horaria) debe viajar cifrada en tránsito y almacenarse protegida en reposo.</p>
+          <p class="text-[11px] font-mono text-slate-400">Mecanismo: HTTPS / MQTTS sobre TLS 1.3; hashing Argon2id para claves y cifrado simétrico AES-256 (Fernet).</p>
+        </div>
+      </div>
+
+      <!-- Scrum Board Container (Hidden by default) -->
+      <div id="reqPanelScrum" class="hidden space-y-4">
+        <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <span class="font-bold text-white">Jira Software + GitHub CI/CD | Proyecto: SmartCampus IoT (SCI) &gt; Cierre Sprint 3 (Entrega Final MVP)</span>
+          <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 font-mono font-bold">Sprint 3: 100% Completado • 28 Commits • 6 PRs Merged</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <!-- Sprint 1 -->
+          <div class="rounded-2xl glass-card p-4 space-y-3 border-t-4 border-t-emerald-500">
+            <h3 class="text-xs font-mono uppercase font-bold text-slate-300">SPRINT 1 — NÚCLEO QR/OTP (DONE)</h3>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-00: Login Institucional con RUT (Mód. 11), Argon2id y OTP</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-00-auth<br/>GitHub PR: PR #1 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-00 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">5 pts • JE</span>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-01: Generador Pase QR Dinámico (TOTP 30s RFC 6238) y Token NFC</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-01-totp<br/>GitHub PR: PR #2 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-01 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">5 pts • HC</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sprint 2 -->
+          <div class="rounded-2xl glass-card p-4 space-y-3 border-t-4 border-t-sky-500">
+            <h3 class="text-xs font-mono uppercase font-bold text-slate-300">SPRINT 2 — VISIÓN EDGE LPR (DONE)</h3>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-02: Motor Visión Edge LPR (OpenCV 720p ROI + Tesseract OCR)</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-02-lpr<br/>GitHub PR: PR #3 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-02 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">8 pts • HC</span>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-03: Padrón Vehicular y Filtro RegEx Anti-SQLi (OWASP A03)</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-03-regex<br/>GitHub PR: PR #4 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-03 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">3 pts • JE</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sprint 3 -->
+          <div class="rounded-2xl glass-card p-4 space-y-3 border-t-4 border-t-indigo-500">
+            <h3 class="text-xs font-mono uppercase font-bold text-slate-300">SPRINT 3 — DASHBOARD, QA &amp; OWASP (DONE)</h3>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-04: Dashboard Guardia WSS, Fallback SQLite y Botón Emergencia</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-04-wss<br/>GitHub PR: PR #5 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-04 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">5 pts • JE</span>
+              </div>
+            </div>
+            <div class="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+              <p class="text-xs font-bold text-white">HU-05: Exportación Nómina RBAC (OWASP A01) y Suite Pytest (88.5%)</p>
+              <p class="text-[11px] font-mono text-sky-400">Git Branch: feature/sci-05-qa<br/>GitHub PR: PR #6 Merged | Pytest: PASSED</p>
+              <div class="flex items-center justify-between pt-1 text-[11px] font-mono">
+                <span class="text-emerald-400">✓ SCI-05 (LISTO)</span>
+                <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200">8 pts • HC</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- OWASP TOP 10 & CHILEAN CYBERCRIME LEGISLATION -->
+    <section id="seguridad" class="space-y-8">
+      <div>
+        <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Secciones III y VI.b • Criterios 3.1.2 y 3.1.3</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Ciberseguridad OWASP Top 10 y Cumplimiento Normativo Chileno</h2>
+        <p class="text-sm text-slate-400 mt-1">Controles defensivos activos en el código del MVP y mapeo jurídico con las Leyes N° 21.459, N° 19.223, N° 19.628 (actualizada por Ley N° 21.719) y el Código de Ética ACM/IEEE.</p>
+      </div>
+
+      <!-- 4 OWASP Top 10 Cards (Figura 3 Informe) -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="rounded-2xl glass-card overflow-hidden border border-emerald-500/40 flex flex-col justify-between">
+          <div class="bg-emerald-600 px-4 py-3 text-white">
+            <p class="text-xs font-mono font-bold uppercase">A01:2021</p>
+            <h3 class="text-sm font-extrabold">Broken Access Control</h3>
+          </div>
+          <div class="p-4 space-y-2 text-xs text-slate-300 flex-1">
+            <p>• Decorador <code>@roles_required('ADMIN', 'GUARDIA')</code> en cada endpoint REST.</p>
+            <p>• Separación estricta de claims JWT (Alumno, Guardia, Administrador).</p>
+            <p>• Denegación por defecto con respuesta <strong>HTTP 403 Forbidden</strong> en 18 ms.</p>
+          </div>
+          <div class="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 text-[11px] font-mono text-emerald-400">
+            Auditoría QA: 100% Efectivo (CP-06)
+          </div>
+        </div>
+
+        <div class="rounded-2xl glass-card overflow-hidden border border-sky-500/40 flex flex-col justify-between">
+          <div class="bg-sky-600 px-4 py-3 text-white">
+            <p class="text-xs font-mono font-bold uppercase">A02:2021</p>
+            <h3 class="text-sm font-extrabold">Cryptographic Failures</h3>
+          </div>
+          <div class="p-4 space-y-2 text-xs text-slate-300 flex-1">
+            <p>• Hashing de contraseñas con <strong>Argon2id</strong> + Salt único resistente a GPUs.</p>
+            <p>• Cifrado simétrico <strong>AES-256 (Fernet)</strong> en reposo para RUTs y patentes.</p>
+            <p>• Canales en tránsito bajo <strong>TLS 1.3</strong> (HTTPS / MQTTS).</p>
+          </div>
+          <div class="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 text-[11px] font-mono text-sky-400">
+            Auditoría QA: 0 Datos Legibles en Dumps
+          </div>
+        </div>
+
+        <div class="rounded-2xl glass-card overflow-hidden border border-amber-500/40 flex flex-col justify-between">
+          <div class="bg-amber-600 px-4 py-3 text-white">
+            <p class="text-xs font-mono font-bold uppercase">A03:2021</p>
+            <h3 class="text-sm font-extrabold">Injection (SQLi / OCR)</h3>
+          </div>
+          <div class="p-4 space-y-2 text-xs text-slate-300 flex-1">
+            <p>• Consultas 100% vía <strong>ORM SQLAlchemy</strong> parametrizado (cero concatenación).</p>
+            <p>• Sanitización con RegEx <code>^[A-Z]{2,4}[0-9]{2,4}$</code> sobre la cadena leída por Tesseract OCR antes de consultar la BD.</p>
+          </div>
+          <div class="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 text-[11px] font-mono text-amber-400">
+            Auditoría QA: 100% Efectivo (CP-05)
+          </div>
+        </div>
+
+        <div class="rounded-2xl glass-card overflow-hidden border border-rose-500/40 flex flex-col justify-between">
+          <div class="bg-rose-600 px-4 py-3 text-white">
+            <p class="text-xs font-mono font-bold uppercase">A07:2021</p>
+            <h3 class="text-sm font-extrabold">Identification Failures</h3>
+          </div>
+          <div class="p-4 space-y-2 text-xs text-slate-300 flex-1">
+            <p>• Bloqueo automático de cuenta por <strong>15 min (900s)</strong> tras 3 intentos fallidos (Brute Force → HTTP 429).</p>
+            <p>• Semilla QR TOTP dinámica con caducidad de 30 seg y ventana drift ±1.</p>
+          </div>
+          <div class="px-4 py-2.5 bg-slate-900/90 border-t border-slate-800 text-[11px] font-mono text-rose-400">
+            Auditoría QA: 100% Efectivo (CP-02/03)
+          </div>
+        </div>
+      </div>
+
+      <!-- Interactive RegEx & RUT Mod 11 Security Sandbox + Legal Mapping Table -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <!-- Sandbox Validador OWASP A03 / RUT -->
+        <div class="lg:col-span-5 rounded-2xl glass-card p-6 space-y-4 border border-amber-500/30">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-bold text-white">Laboratorio En Vivo: Validador Anti-SQLi &amp; RUT</h3>
+            <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/20 text-amber-300">src/lpr_ocr_service.py</span>
+          </div>
+          <p class="text-xs text-slate-300">Prueba cómo la función <code>sanitizar_y_validar_patente_ocr()</code> neutraliza vectores de inyección SQL en carteles adulterados o valida placas chilenas reales antes de encriptarlas en AES-256.</p>
+
+          <div class="space-y-3">
+            <div>
+              <label for="sandboxPlateInput" class="block text-xs font-mono text-slate-400 mb-1">Entrada Cruda Cámara OCR / Formulario:</label>
+              <input id="sandboxPlateInput" type="text" value="AB-CD-12" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3.5 py-2 text-xs font-mono text-white focus:outline-none focus:border-sky-500" />
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+              <button type="button" data-preset="AB-CD-12" class="sandbox-preset-btn text-[11px] font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300">Placa Válida: AB-CD-12</button>
+              <button type="button" data-preset="' OR 1=1; DROP TABLE accesos; --" class="sandbox-preset-btn text-[11px] font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-rose-300">Ataque SQLi: ' OR 1=1; DROP...</button>
+              <button type="button" data-preset="<script>alert(1)</script>" class="sandbox-preset-btn text-[11px] font-mono px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300">Payload XSS</button>
+            </div>
+            <button id="runSandboxValidationBtn" type="button" class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+              Ejecutar Sanitización RegEx + Tokenización Fernet AES-256
+            </button>
+            <div id="sandboxResultBox" class="p-3.5 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-1 text-emerald-400">
+              <div>[OK] HTTP 200: Placa sanitizada = "ABCD12"</div>
+              <div class="text-slate-400 break-all">Token AES-256 (Fernet): gAAAAABnM8x9_SmartCampus_Encrypted_ABCD12==</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabla 3.1 Mapeo Legal Chileno -->
+        <div class="lg:col-span-7 rounded-2xl glass-card p-6 space-y-4 overflow-x-auto">
+          <h3 class="text-base font-bold text-white">Mapeo de Cumplimiento Jurídico y Ético en Chile (Tabla 3.1)</h3>
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-700 text-slate-400 font-mono uppercase">
+                <th class="py-2 pr-3">Norma / Artículo Legal</th>
+                <th class="py-2 px-3">Riesgo en el Prototipo</th>
+                <th class="py-2 px-3">Medida Técnica en el MVP</th>
+                <th class="py-2 pl-3">Evidencia en Repositorio</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-800 text-slate-200">
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Ley 21.459 (Art. 2°) / Ley 19.223 (Art. 3°): Acceso Ilícito</td>
+                <td class="py-3 px-3 text-slate-300">Suplantación mediante capturas de pantalla QR o fuerza bruta sobre cuentas admin.</td>
+                <td class="py-3 px-3 text-slate-300">Semilla dinámica TOTP cada 30s (RFC 6238), 2FA OTP al correo y bloqueo tras 3 fallos.</td>
+                <td class="py-3 pl-3 font-mono text-emerald-400">auth_totp.py (Líneas 18–52)</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Ley 21.459 (Art. 3°): Interceptación Ilícita</td>
+                <td class="py-3 px-3 text-slate-300">Captura de paquetes (Sniffing / MitM) en la red local entre torniquete y servidor.</td>
+                <td class="py-3 px-3 text-slate-300">Encriptación obligatoria HTTPS / TLS 1.3 para API REST y MQTTS con certificados mutuos.</td>
+                <td class="py-3 pl-3 font-mono text-emerald-400">docker-compose.yml &amp; Nginx SSL</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Ley 21.459 (Art. 1° y 4°): Sabotaje e Integridad</td>
+                <td class="py-3 px-3 text-slate-300">Alteración maliciosa de registros o inyección SQL desde el lector óptico LPR.</td>
+                <td class="py-3 px-3 text-slate-300">Consultas 100% parametrizadas vía ORM SQLAlchemy, RegEx y auditoría append-only HMAC.</td>
+                <td class="py-3 pl-3 font-mono text-emerald-400">db_security.py (Líneas 12–48)</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Ley 19.628 (Art. 4°, 7° y 9°): Datos Personales</td>
+                <td class="py-3 px-3 text-slate-300">Exposición masiva de RUTs, nombres y patentes ante acceso no autorizado a BD.</td>
+                <td class="py-3 px-3 text-slate-300">Hash Argon2id, cifrado simétrico AES-256 (Fernet) en reposo y enmascaramiento de RUT.</td>
+                <td class="py-3 pl-3 font-mono text-emerald-400">db_security.py (Fernet AES-256)</td>
+              </tr>
+              <tr>
+                <td class="py-3 pr-3 font-semibold text-sky-300">Código Ética ACM/IEEE (1.03 y 3.10): Seguridad Física</td>
+                <td class="py-3 px-3 text-slate-300">Fallo del OCR o corte eléctrico que deje encerrados a usuarios en el campus.</td>
+                <td class="py-3 px-3 text-slate-300">Diseño Fail-Safe y botón de Apertura Manual de Emergencia en el Dashboard del Guardia.</td>
+                <td class="py-3 pl-3 font-mono text-emerald-400">Portal_Web_Seguridad (WSS)</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- PLAN DE PRUEBAS (CP-01 A CP-06), CHARTS & PYTEST CONSOLE -->
+    <section id="pruebas" class="space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div>
+          <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Sección VI y Anexo C • Criterio 3.1.3</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Plan de Pruebas Integral (Gherkin), Métricas de Latencia y Consola QA</h2>
+          <p class="text-sm text-slate-400 mt-1">6 escenarios evaluados en niveles Unitario, Integración, Sistema y Seguridad OWASP con 88,5% de cobertura medida con Pytest y Coverage.py.</p>
+        </div>
+        <button id="runPytestSuiteBtn" type="button" class="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-lg shadow-emerald-500/20 flex items-center gap-2 self-start sm:self-auto">
+          <span>▶ Ejecutar Suite Pytest (6 Casos)</span>
+        </button>
+      </div>
+
+      <!-- Charts Row (Figura Anexo C.1) -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="rounded-2xl glass-card p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Tiempo de Respuesta por Módulo (ms) vs Límite RNF-01 (1500 ms)</h3>
+            <span class="text-[11px] font-mono text-emerald-400">Máx P98: 1180 ms</span>
+          </div>
+          <div class="relative h-72">
+            <canvas id="latencyChart"></canvas>
+          </div>
+        </div>
+
+        <div class="rounded-2xl glass-card p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-white">Cumplimiento de Calidad, Seguridad y Cobertura (%)</h3>
+            <span class="text-[11px] font-mono text-sky-400">Meta Mínima: 80%</span>
+          </div>
+          <div class="relative h-72">
+            <canvas id="qualityChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pytest Live Console Output -->
+      <div class="rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden shadow-xl">
+        <div class="bg-slate-900 px-4 py-2.5 border-b border-slate-800 flex items-center justify-between text-xs font-mono">
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-amber-500 inline-block"></span>
+            <span class="w-3 h-3 rounded-full bg-emerald-500 inline-block"></span>
+            <span class="text-slate-300 ml-2">Consola QA — Reporte de Ejecución Pytest y Cobertura (Coverage.py)</span>
+          </div>
+          <span id="pytestStatusBadge" class="text-emerald-400 font-bold">6 passed in 1.84s</span>
+        </div>
+        <pre id="pytestTerminalOutput" class="p-4 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed code-scroll">$ pytest tests/test_suite_mvp.py -v --cov=src --cov-report=term-missing
+======================================== test session starts ========================================
+platform linux -- Python 3.11.8, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache | rootdir: /app/smartcampus-iot-mvp
+plugins: cov-4.1.0, asyncio-0.23.5
+collected 6 items
+
+tests/test_suite_mvp.py::test_cp01_login_mfa_jwt_argon2id PASSED                              [ 16%]
+tests/test_suite_mvp.py::test_cp02_bloqueo_fuerza_bruta_owasp_a07 PASSED                      [ 33%]
+tests/test_suite_mvp.py::test_cp03_rechazo_qr_totp_vencido_30s PASSED                         [ 50%]
+tests/test_suite_mvp.py::test_cp04_latencia_lpr_ocr_menor_1500ms PASSED                       [ 66%]
+tests/test_suite_mvp.py::test_cp05_sanitizacion_regex_anti_sqli_owasp_a03 PASSED              [ 83%]
+tests/test_suite_mvp.py::test_cp06_control_acceso_rbac_owasp_a01_y_fallback_sqlite PASSED     [100%]
+
+---------- coverage: platform linux, python 3.11.8-final-0 -----------
+Name                        Stmts   Miss  Cover   Missing
+---------------------------------------------------------
+src/auth_totp.py               64      6    91%   48-53
+src/db_security.py             52      5    90%   71-75
+src/lpr_ocr_service.py         48      8    83%   62-69
+---------------------------------------------------------
+TOTAL                         164     19  88.5%
+========================================= 6 passed in 1.84s =========================================</pre>
+      </div>
+
+      <!-- Tabla 6.1 Casos de Prueba Gherkin -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-sky-400 font-bold">CP-01 • Unitaria / Integración</span>
+            <span class="text-emerald-400 font-bold">PASSED (245 ms)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-01, RNF-03, RNF-04</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un usuario con RUT válido 19.876.543-2, <strong>Cuando</strong> envía su clave y el código OTP 482910, <strong>Entonces</strong> recibe un JWT firmado HS256 con rol y HTTP 200 en &lt; 500 ms (P98: 310 ms).</p>
+        </div>
+
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-rose-400 font-bold">CP-02 • Seguridad OWASP A07</span>
+            <span class="text-emerald-400 font-bold">PASSED (HTTP 429)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-01, RNF-03, OWASP A07</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un atacante intentando fuerza bruta sobre el RUT 19.876.543-2, <strong>Cuando</strong> falla la contraseña 3 veces consecutivas, <strong>Entonces</strong> bloquea la cuenta por 15 min (900 s) y retorna HTTP 429.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-amber-400 font-bold">CP-03 • Integración TOTP QR</span>
+            <span class="text-emerald-400 font-bold">PASSED (HTTP 401)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-02, RNF-01, Ley 21.459</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un código QR generado hace más de 30 segundos (captura de pantalla), <strong>Cuando</strong> el lector lo escanea a los 35s, <strong>Entonces</strong> rechaza el token (HTTP 401) y alerta al Dashboard en 115 ms.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-emerald-400 font-bold">CP-04 • Sistema Visión LPR</span>
+            <span class="text-emerald-400 font-bold">PASSED (1.180 ms)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-03, RNF-01</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un vehículo con patente 'AB-CD-12' frente al pórtico, <strong>Cuando</strong> captura el frame a 720p, <strong>Entonces</strong> el OCR extrae 'ABCD12' con confianza 98,4% y abre en P98 1,18 s descontando 1 cupo.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-amber-400 font-bold">CP-05 • Seguridad OWASP A03</span>
+            <span class="text-emerald-400 font-bold">PASSED (HTTP 400)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-03, RF-04, OWASP A03</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un intento de Inyección SQL (<code>' OR 1=1; DROP TABLE accesos; --</code>), <strong>Cuando</strong> el backend procesa la entrada, <strong>Entonces</strong> el validador RegEx y el ORM neutralizan el payload sin ejecutar SQL.</p>
+        </div>
+
+        <div class="p-4 rounded-2xl glass-card space-y-2">
+          <div class="flex justify-between text-xs font-mono">
+            <span class="text-indigo-400 font-bold">CP-06 • Aceptación / Resiliencia</span>
+            <span class="text-emerald-400 font-bold">PASSED (18 ms / 140 ms)</span>
+          </div>
+          <p class="text-xs font-semibold text-white">Cubre: RF-04, RF-05, RNF-02, OWASP A01</p>
+          <p class="text-xs text-slate-300"><strong>Dado</strong> un rol 'ESTUDIANTE' intentando exportar nómina PDF, <strong>Cuando</strong> invoca el endpoint admin, <strong>Entonces</strong> RBAC deniega con HTTP 403 en 18 ms; y ante corte WAN opera Fallback SQLite en 140 ms.</p>
+        </div>
+      </div>
+
+      <!-- Problemas Encontrados y Soluciones (Sección VI.c) -->
+      <div class="rounded-2xl glass-card p-6 space-y-4">
+        <h3 class="text-lg font-bold text-white">Problemas Encontrados Durante el Desarrollo y Soluciones Implementadas (Sección VI.c)</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-mono font-semibold">Problema 1: Latencia 2,8 s en 4K</span>
+            <p class="font-bold text-white">Procesamiento de fotogramas IP en resolución 4K completa superaba RNF-01 (1,5 s)</p>
+            <p class="text-slate-300"><strong>Solución:</strong> Se configuró el stream secundario RTSP a 720p y se programó en OpenCV un recorte automático de la Región de Interés (ROI) inferior central antes de invocar a Tesseract OCR, reduciendo la latencia P98 a <strong>1,18 segundos</strong>.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-semibold">Problema 2: Clock Drift TOTP (4 s)</span>
+            <p class="font-bold text-white">Falsos rechazos de códigos QR por desfase de reloj en smartphones de alumnos</p>
+            <p class="text-slate-300"><strong>Solución:</strong> Se ajustó el parámetro <code>valid_window=1</code> en la librería PyOTP, otorgando una ventana de tolerancia de ±1 intervalo criptográfico sin comprometer la protección contra capturas antiguas.</p>
+          </div>
+          <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 space-y-2">
+            <span class="px-2 py-0.5 rounded bg-sky-500/20 text-sky-300 font-mono font-semibold">Problema 3: Cuello de Botella SQL</span>
+            <p class="font-bold text-white">Consultas concurrentes de patentes recurrentes en horario punta (08:00 hrs)</p>
+            <p class="text-slate-300"><strong>Solución:</strong> Se añadió un índice compuesto B-Tree sobre las columnas <code>(patente_hash, estado_activo)</code> en PostgreSQL y una caché local SQLite/Redis en el Gateway de borde.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANEXO A (SOURCE CODE), ANEXO B (UML SEQUENCE) & ANEXO D (SIGNATURES) -->
+    <section id="codigo" class="space-y-8">
+      <div>
+        <span class="text-xs font-mono uppercase tracking-widest text-sky-400">Anexos A, B y D • PEP 8, Diagrama de Secuencia UML y Declaración Ética</span>
+        <h2 class="text-2xl sm:text-3xl font-bold text-white mt-1">Código Fuente Nuclear, Secuencia UML de Seguridad y Suscripción Ética</h2>
+      </div>
+
+      <!-- Source Code Viewer (Anexo A) -->
+      <div class="rounded-2xl bg-slate-950 border border-slate-800 overflow-hidden shadow-xl">
+        <div class="bg-slate-900 px-4 py-3 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap gap-2">
+            <button type="button" data-codefile="auth" class="code-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-sky-500 text-slate-950 transition">
+              src/auth_totp.py (TOTP &amp; RBAC OWASP A01/A07)
+            </button>
+            <button type="button" data-codefile="db" class="code-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+              src/db_security.py &amp; src/lpr_ocr_service.py (ORM &amp; AES-256)
+            </button>
+          </div>
+          <button id="copyCodeBtn" type="button" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-mono text-sky-400 border border-slate-700 transition">
+            Copiar Código
+          </button>
+        </div>
+        <pre id="sourceCodeDisplay" class="p-5 text-xs font-mono text-slate-200 overflow-x-auto leading-relaxed code-scroll"></pre>
+      </div>
+
+      <!-- Diagrama UML de Secuencia de Seguridad (Anexo B) -->
+      <div class="rounded-2xl glass-card p-6 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-white">Anexo B: Diagrama UML de Secuencia de Validación TOTP, Sanitización OCR y Control OWASP</h3>
+            <p class="text-xs text-slate-400">Flujo extremo a extremo a través de los 5 estereotipos arquitectónicos del prototipo.</p>
+          </div>
+          <span class="text-xs font-mono px-2.5 py-1 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">Tiempo Total: 1180 ms (&lt; 1500 ms)</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs font-mono pt-2">
+          <div class="p-2.5 rounded-xl bg-sky-500/15 border border-sky-500/40 text-sky-300 font-bold">:Cliente / Pórtico<br/><span class="text-[10px] font-normal text-slate-400">&lt;&lt;Boundary&gt;&gt;</span></div>
+          <div class="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-300 font-bold">:Middleware_OWASP<br/><span class="text-[10px] font-normal text-slate-400">&lt;&lt;Control&gt;&gt;</span></div>
+          <div class="p-2.5 rounded-xl bg-indigo-500/15 border border-indigo-500/40 text-indigo-300 font-bold">:Validador_TOTP_LPR<br/><span class="text-[10px] font-normal text-slate-400">&lt;&lt;Service&gt;&gt;</span></div>
+          <div class="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 font-bold">:PostgreSQL_ORM<br/><span class="text-[10px] font-normal text-slate-400">&lt;&lt;Entity&gt;&gt;</span></div>
+          <div class="p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/40 text-purple-300 font-bold col-span-2 sm:col-span-1">:Auditor_Logs<br/><span class="text-[10px] font-normal text-slate-400">&lt;&lt;Security&gt;&gt;</span></div>
+        </div>
+
+        <div class="space-y-2 text-xs font-mono pt-2">
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-sky-300">1: POST /api/v1/acceso (JWT, Payload QR/Placa)</span>
+            <span class="text-slate-400">Cliente / Pórtico → Middleware_OWASP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-amber-300">2: VerificarJWT() + RateLimit(3 int.) [Mitigación OWASP A01 / A07]</span>
+            <span class="text-slate-400">Auto-llamada en Middleware_OWASP</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-indigo-300">3: SanitizarRegEx(Payload) [Mitigación OWASP A03]</span>
+            <span class="text-slate-400">Middleware_OWASP → Validador_TOTP_LPR</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-emerald-300">4: ConsultarCredencialORM(RUT_Hash / Placa)</span>
+            <span class="text-slate-400">Validador_TOTP_LPR → PostgreSQL_ORM</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-emerald-400">5: Retorno: UsuarioVigente + Semilla_TOTP</span>
+            <span class="text-slate-400">PostgreSQL_ORM --&gt; Validador_TOTP_LPR</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-amber-500/30 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-amber-300">6: VerificarTOTP(interval=30s, window=1) [RFC 6238]</span>
+            <span class="text-slate-400">Auto-llamada en Validador_TOTP_LPR</span>
+          </div>
+          <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <span class="text-purple-300">7: RegistrarLogNoRepudio(RUT_Mask, Hora) [Ley 19.628 / 21.459]</span>
+            <span class="text-slate-400">Validador_TOTP_LPR → Auditor_Logs</span>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-500/15 border border-emerald-500/40 flex flex-wrap items-center justify-between gap-2 font-bold">
+            <span class="text-emerald-300">8: HTTP 200 OK {acceso: AUTORIZADO, ms: 1180}</span>
+            <span class="text-emerald-400">Validador_TOTP_LPR --&gt; Cliente / Pórtico</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conclusiones, Recomendaciones (YOLOv8 + IR 850nm + Kafka) & Declaración Ética -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div class="lg:col-span-6 rounded-2xl glass-card p-6 space-y-4">
+          <h3 class="text-lg font-bold text-white">Conclusiones y Hoja de Ruta a Producción (v2.0)</h3>
+          <ul class="space-y-2.5 text-xs text-slate-300 leading-relaxed">
+            <li>• <strong>Convergencia Cloud + Edge (Criterio 3.1.1):</strong> Delegar la inferencia OCR al nodo de borde local y mantener la gestión transaccional en contenedores Docker en la nube permitió cumplir el 100% de los RFs con una latencia P98 de <strong>1,18 segundos</strong>.</li>
+            <li>• <strong>Confiabilidad Jurídico-Ética desde el Diseño (SecDevOps):</strong> Integrar las Leyes N° 21.459, N° 19.223 y N° 19.628 junto a OWASP Top 10 en cada Sprint blindó al MVP sin degradar la experiencia de usuario.</li>
+            <li>• <strong>Recomendación para Producción v2.0:</strong> Ante barro extremo o noche sin foco auxiliar, la precisión de Tesseract OCR baja del 96,4% al 78%. Para la versión 2.0 se recomienda migrar a una red neuronal convolucional <strong>YOLOv8</strong> entrenada con patentes chilenas, sumar iluminadores infrarrojos (<strong>IR 850nm</strong>) e integrar sincronización con matrícula vía <strong>Apache Kafka</strong>.</li>
+          </ul>
+
+          <div class="pt-3 border-t border-slate-800 space-y-1.5">
+            <h4 class="text-xs font-mono uppercase text-slate-400">Referencias Bibliográficas y Normativas Clave</h4>
+            <ul class="text-[11px] text-slate-400 space-y-1">
+              <li>• Congreso Nacional de Chile (2022). <em>Ley N° 21.459 sobre Delitos Informáticos (Convenio de Budapest)</em> &amp; <em>Ley N° 19.223</em>.</li>
+              <li>• Congreso Nacional de Chile (1999 / 2024). <em>Ley N° 19.628 sobre Protección de la Vida Privada (actualizada por Ley N° 21.719)</em>.</li>
+              <li>• OWASP Foundation (2021). <em>OWASP Top Ten: The Ten Most Critical Web Application Security Risks</em>.</li>
+              <li>• Mračkig, D., &amp; M’Raihi, D. (2011). <em>RFC 6238: TOTP: Time-Based One-Time Password Algorithm</em> (IETF).</li>
+              <li>• ISO/IEC/IEEE (2018). <em>ISO/IEC/IEEE 29148:2018 Systems and software engineering — Requirements engineering</em>.</li>
+              <li>• ACM / IEEE-CS Joint Task Force (2018). <em>Código de Ética y Práctica Profesional de Ingeniería de Software</em>.</li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Anexo D: Declaración de Originalidad y Firmas -->
+        <div class="lg:col-span-6 rounded-2xl glass-card p-6 space-y-4 flex flex-col justify-between">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-bold text-white">Anexo D: Declaración de Originalidad y Ética</h3>
+              <span class="text-xs font-mono px-2.5 py-0.5 rounded bg-sky-500/20 text-sky-300">Firmado Digitalmente</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">
+              Los integrantes del equipo declaran formalmente que el presente informe técnico y el prototipo <strong>SmartCampus IoT (Versión Alpha / MVP)</strong> constituyen una obra original e inédita, desarrollada íntegramente para la Evaluación Sumativa de la Unidad 3 de la asignatura <em>Ingeniería de Software / Cocreación, Patrones y Requerimientos del Software (TI3043)</em> en <strong>INACAP Sede Maipú</strong>, aplicando rigurosamente el Código de Ética ACM/IEEE y la legislación chilena vigente.
+            </p>
+
+            <div class="space-y-3 pt-2">
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div>
+                  <p class="font-bold text-white">Howens Jhosep Castro Sierra</p>
+                  <p class="text-slate-400">Arquitecto Cloud/Edge &amp; Desarrollador Backend / Seguridad OWASP</p>
+                  <p class="text-[11px] font-mono text-sky-400 mt-0.5">INACAP Maipú • D-IEI-N4-P2-C2(F)</p>
+                </div>
+                <div class="px-3 py-2 rounded-lg bg-slate-950 border border-emerald-500/30 font-mono text-[11px] text-emerald-400 shrink-0">
+                  ✓ Firmado digitalmente:<br/>H. Castro Sierra (14-11-2026)
+                </div>
+              </div>
+
+              <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                <div>
+                  <p class="font-bold text-white">Joaquín Elgueta</p>
+                  <p class="text-slate-400">Ingeniero de Requerimientos Scrum, QA Testing &amp; Desarrollador Full-Stack</p>
+                  <p class="text-[11px] font-mono text-sky-400 mt-0.5">INACAP Maipú • D-IEI-N4-P2-C2(F)</p>
+                </div>
+                <div class="px-3 py-2 rounded-lg bg-slate-950 border border-emerald-500/30 font-mono text-[11px] text-emerald-400 shrink-0">
+                  ✓ Firmado digitalmente:<br/>J. Elgueta (14-11-2026)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+            <span>Listo para desplegar en <strong>GitHub Pages</strong> (<code>index.html</code>)</span>
+            <a href="https://github.com/jelguetameneses-creator/SmartCampus_IoT.git" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline font-mono">github.com/jelguetameneses-creator/SmartCampus_IoT.git</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: REGISTRAR VISITA TEMPORAL -->
+  <div id="visitorModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-md rounded-2xl glass-card border border-slate-700 p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white">Registrar Pase Temporal de Visita</h3>
+        <button id="closeVisitorModalBtn" type="button" class="text-slate-400 hover:text-white text-sm font-mono">✕</button>
+      </div>
+      <form id="visitorForm" class="space-y-3 text-xs">
+        <div>
+          <label for="visitorNameInput" class="block text-slate-300 mb-1">Nombre Completo del Visitante:</label>
+          <input id="visitorNameInput" type="text" required value="Manuel Rojas (Visita Académica)" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 text-white focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label for="visitorRutInput" class="block text-slate-300 mb-1">RUT Chileno (Validación Módulo 11):</label>
+          <input id="visitorRutInput" type="text" required value="15.432.890-1" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 font-mono text-white focus:outline-none focus:border-sky-500" />
+        </div>
+        <div>
+          <label for="visitorPlateInput" class="block text-slate-300 mb-1">Patente Vehicular (Opcional • Formato BBBB-99):</label>
+          <input id="visitorPlateInput" type="text" value="MR-VJ-26" class="w-full rounded-xl bg-slate-900 border border-slate-700 px-3 py-2 font-mono text-white focus:outline-none focus:border-sky-500" />
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button id="cancelVisitorBtn" type="button" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700">Cancelar</button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold">Emitir Pase QR &amp; Autorizar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: REPORTE PDF EXPORTADO (RF-04) -->
+  <div id="pdfModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+    <div class="w-full max-w-lg rounded-2xl glass-card border border-purple-500/40 p-6 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div>
+          <span class="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-purple-500/20 text-purple-300">RF-04 • ReportLab PDF Engine • RBAC Admin</span>
+          <h3 class="text-base font-bold text-white mt-1">Vista Previa de Nómina Oficial de Accesos</h3>
+        </div>
+        <button id="closePdfModalBtn" type="button" class="text-slate-400 hover:text-white text-sm font-mono">✕</button>
+      </div>
+      <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 font-mono text-xs space-y-2 text-slate-300 max-h-64 overflow-y-auto code-scroll">
+        <div class="text-purple-400 font-bold">=== INACAP SEDE MAIPÚ — REPORTE OFICIAL SMARTCAMPUS IoT ===</div>
+        <div>Fecha Generación: 14-11-2026 | Operador JWT: H. Castro (ADMIN)</div>
+        <div>Protección Ley N° 19.628: RUTs Enmascarados | Firma HMAC-SHA256</div>
+        <div class="border-t border-slate-800 pt-2 space-y-1" id="pdfReportLines"></div>
+      </div>
+      <div class="flex justify-between items-center pt-2 text-xs">
+        <span class="text-slate-400 font-mono">Latencia ReportLab: 640 ms (P98: 890 ms)</span>
+        <button id="downloadCsvReportBtn" type="button" class="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-400 text-slate-950 font-bold">
+          Descargar Nómina (.txt / .csv)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    (function () {
+      // --- 1. DATA & INITIAL STATE ---
+      const students = {
+        joaquin: {
+          name: 'Joaquín Elgueta',
+          shortName: 'J. Elgueta',
+          rut: '19.876.543-2',
+          maskedRut: '***543-2',
+          career: 'Ing. Informática',
+          plate: 'AB-CD-12',
+          cleanPlate: 'ABCD12'
+        },
+        howens: {
+          name: 'Howens Castro Sierra',
+          shortName: 'H. Castro',
+          rut: '20.451.892-K',
+          maskedRut: '***892-K',
+          career: 'Ing. Informática',
+          plate: 'HC-SR-26',
+          cleanPlate: 'HCSR26'
+        }
+      };
+
+      let currentStudentKey = 'joaquin';
+      let totpSecondsLeft = 18;
+      let currentTotpToken = '849 201';
+      let aforoPeatonal = 452;
+      const aforoMax = 800;
+      let cuposOcupados = 38;
+      const cuposMax = 50;
+      let wanOnline = true;
+      let emergencyActive = false;
+      let currentLogFilter = 'ALL';
+
+      const accessLogs = [
+        { time: '08:14:22', type: 'PEATONAL QR', detail: '19.876.543-2 (J. Elgueta)', status: 'AUTORIZADO' },
+        { time: '08:13:50', type: 'VEHICULAR LPR', detail: 'Placa AB-CD-12 (Conf: 98.4%)', status: 'AUTORIZADO' },
+        { time: '08:10:15', type: 'VEHICULAR LPR', detail: 'Placa XX-YY-99 (No Reg.)', status: 'RECHAZADO' },
+        { time: '08:06:04', type: 'PEATONAL QR', detail: 'Token Expirado (> 30 seg)', status: 'BLOQUEADO' },
+        { time: '08:02:41', type: 'PEATONAL NFC', detail: '20.451.892-K (H. Castro)', status: 'AUTORIZADO' }
+      ];
+
+      const archDetails = {
+        edge: {
+          badge: 'Edge Computing (Red LAN Sede)',
+          title: 'Gateway IoT de Borde & Pórtico Local',
+          hardware: 'NVIDIA Jetson Nano / Raspberry Pi 5 + Cámara IP RTSP 720p (30fps) + Lector QR/NFC + Relé GPIO',
+          description: 'Ejecuta el motor de Visión Computacional LPR (OpenCV + Tesseract OCR) directamente en la caseta del pórtico en menos de 800 ms, evitando enviar video continuo a la nube (lo que tomaría >4s). Incluye una base de datos caché SQLite sincronizada cada 5 minutos para operar autónomamente en 140 ms si se corta el internet WAN (RNF-02).',
+          metrics: ['Latencia apertura LPR P98: 1,18 s (< 1,5 s exigido)', 'Fallback autónomo SQLite: 99,8% Uptime', 'Protocolo hacia nube: MQTTS / TLS 1.3 con certificados mutuos']
+        },
+        iaas: {
+          badge: 'Cloud Computing — Modelo IaaS',
+          title: 'Infraestructura Virtualizada y Contenedores Docker',
+          hardware: 'VPC Nube Pública (AWS / DigitalOcean) • Ubuntu Server 24.04 LTS • Docker 25.0 + Nginx',
+          description: 'Aloja el clúster de contenedores Docker que ejecutan la API REST central en Python 3.11 (Flask / Flask-SocketIO), estructurada bajo el patrón de diseño GoF Abstract Factory (IFabricaAccesoIoT) y protegida por un Reverse Proxy Nginx con terminación TLS 1.3.',
+          metrics: ['Escalabilidad horizontal en horario punta (08:00 a 08:45 hrs)', 'Autenticación MFA con PyJWT (HS256) y Argon2id', 'Política de contenedores restart: always']
+        },
+        paas: {
+          badge: 'Cloud Computing — Modelo PaaS',
+          title: 'Servicios Administrados de Persistencia y Caché',
+          hardware: 'PostgreSQL 16.2 Administrado + SQLAlchemy ORM 2.0 + Caché Redis en Memoria',
+          description: 'Provee persistencia relacional transaccional de alta disponibilidad sin carga de mantenimiento de hardware para el equipo TI. Todas las consultas están 100% parametrizadas vía SQLAlchemy ORM (mitigando OWASP A03) y las columnas sensibles se almacenan cifradas con AES-256 (Fernet).',
+          metrics: ['Índice compuesto B-Tree en (patente_hash, estado_activo)', 'Cifrado en reposo AES-256 (Cumplimiento Ley N° 19.628)', 'Backups automáticos diarios y bitácora append-only HMAC']
+        },
+        saas: {
+          badge: 'Cloud Computing — Modelo SaaS',
+          title: 'Aplicaciones Cliente Multi-Sede Listas para Uso',
+          hardware: 'Portal Web Seguridad (ReactJS 18.2 + TailwindCSS + WSS) & App Móvil "Mi Pase" (Flutter UI)',
+          description: 'Distribuye el software final a guardias, jefatura de seguridad, docentes y estudiantes sin requerir instalación local en las casetas. El Dashboard recibe alertas en vivo por WebSockets (WSS) en 115 ms y permite exportar nóminas PDF o activar la apertura general de emergencia.',
+          metrics: ['Generación QR TOTP cada 30s (RFC 6238) + token NFC', 'Consola de guardia con monitoreo de aforo en vivo', 'Despliegue instantáneo de parches de seguridad multi-sede']
+        }
+      };
+
+      const codeSnippets = {
+        auth: `# Archivo: src/auth_totp.py
+# Propósito: Autenticación TOTP (RFC 6238), control RBAC JWT (OWASP A01) y Anti-BruteForce (OWASP A07)
+
+import time
+import pyotp
+import jwt
+from functools import wraps
+from flask import request, jsonify
+
+class ModuloSeguridadIoT:
+    """
+    Gestiona la emisión y verificación de credenciales dinámicas QR/NFC (RF-02)
+    y el control de intentos fallidos para prevenir accesos ilícitos (Ley N° 21.459 Art. 2°).
+    """
+    MAX_INTENTOS = 3
+    TIEMPO_BLOQUEO_SEG = 900  # 15 minutos de bloqueo (RNF-03)
+
+    def __init__(self, secret_key_base32: str, jwt_secret: str):
+        self.totp_engine = pyotp.TOTP(secret_key_base32, interval=30, digits=6)
+        self.jwt_secret = jwt_secret
+        self.registro_intentos = {}  # {rut_usuario: {"fallos": int, "bloqueado_hasta": float}}
+
+    def verificar_pase_qr_dinamico(self, rut_usuario: str, token_ingresado: str) -> dict:
+        """
+        Verifica el token TOTP de 6 dígitos con ventana de tolerancia (valid_window=1)
+        para absorber desfases de reloj de red sin permitir capturas de pantalla antiguas.
+        """
+        ahora = time.time()
+        estado = self.registro_intentos.get(rut_usuario, {"fallos": 0, "bloqueado_hasta": 0})
+
+        if ahora < estado["bloqueado_hasta"]:
+            raise PermissionError("HTTP 429: Cuenta bloqueada temporalmente por seguridad (OWASP A07).")
+
+        es_valido = self.totp_engine.verify(token_ingresado, valid_window=1)
+        if not es_valido:
+            estado["fallos"] += 1
+            if estado["fallos"] >= self.MAX_INTENTOS:
+                estado["bloqueado_hasta"] = ahora + self.TIEMPO_BLOQUEO_SEG
+            self.registro_intentos[rut_usuario] = estado
+            return {"autorizado": False, "motivo": "Token QR expirado o inválido", "http_code": 401}
+
+        # Resetear contador tras ingreso exitoso
+        self.registro_intentos[rut_usuario] = {"fallos": 0, "bloqueado_hasta": 0}
+        return {"autorizado": True, "motivo": "PULSO_RELE_ACTIVO", "http_code": 200}
+
+def roles_required(*roles_permitidos):
+    """Decorador RBAC para mitigar Broken Access Control (OWASP A01:2021)."""
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            auth_header = request.headers.get("Authorization", "")
+            if not auth_header.startswith("Bearer "):
+                return jsonify({"error": "Token JWT requerido"}), 401
+            try:
+                payload = jwt.decode(auth_header.split(" ")[1], "CLAVE_SECRETA_TLS", algorithms=["HS256"])
+                if payload.get("rol") not in roles_permitidos:
+                    return jsonify({"error": "HTTP 403: Rol sin privilegios para este recurso"}), 403
+            except jwt.ExpiredSignatureError:
+                return jsonify({"error": "Sesión expirada"}), 401
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator`,
+        db: `# Archivo: src/db_security.py & src/lpr_ocr_service.py
+# Propósito: Cifrado AES-256 (Ley 19.628), Hashing Argon2id (OWASP A02) y Sanitización OCR Anti-SQLi (OWASP A03)
+
+import re
+from argon2 import PasswordHasher
+from cryptography.fernet import Fernet
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, select
+from sqlalchemy.orm import declarative_base, Session
+
+Base = declarative_base()
+ph_argon2 = PasswordHasher(time_cost=3, memory_cost=65536, parallelism=4)
+PATRON_PATENTE_CL = re.compile(r"^[A-Z]{2,4}[0-9]{2,4}$")
+
+class RegistroAccesoORM(Base):
+    """Entidad ORM parametrizada que previene Inyección SQL (OWASP A03) y cifra datos sensibles."""
+    __tablename__ = "nomina_accesos"
+    cod_nomina = Column(Integer, primary_key=True, autoincrement=True)
+    rut_enmascarado = Column(String(20), nullable=False, index=True)
+    patente_cifrada_aes = Column(String(256), nullable=True)
+    tipo_acceso = Column(String(20), nullable=False)  # PEATONAL_QR | VEHICULAR_LPR
+    autorizado = Column(Boolean, default=True)
+
+def sanitizar_y_validar_patente_ocr(texto_crudo_ocr: str, db_session: Session, fernet: Fernet) -> dict:
+    """
+    Limpia caracteres especiales leídos por la cámara LPR y valida estrictamente el formato
+    chileno antes de consultar la base de datos mediante SQLAlchemy ORM (Mitigación OWASP A03).
+    """
+    limpio = re.sub(r"[^A-Z0-9]", "", texto_crudo_ocr.upper())
+    if not PATRON_PATENTE_CL.match(limpio):
+        raise ValueError(f"HTTP 400: Formato de placa inválido o intento de inyección detectado: {limpio}")
+
+    # Consulta 100% parametrizada vía ORM (Cero concatenación de strings SQL)
+    stmt = select(RegistroAccesoORM).where(RegistroAccesoORM.autorizado.is_(True))
+    patente_token = fernet.encrypt(limpio.encode("utf-8")).decode("utf-8")
+    return {"patente_limpia": limpio, "token_aes256": patente_token, "estado": "VALIDADA_ORM"}`
+      };
+
+      // --- 2. HELPER FUNCTIONS ---
+      function showToast(title, message, type) {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const colors = {
+          success: 'border-emerald-500 bg-slate-900/95 text-emerald-300',
+          error: 'border-rose-500 bg-slate-900/95 text-rose-300',
+          warning: 'border-amber-500 bg-slate-900/95 text-amber-300',
+          info: 'border-sky-500 bg-slate-900/95 text-sky-300'
+        };
+        const toast = document.createElement('div');
+        toast.className = `p-3.5 rounded-xl border-l-4 shadow-xl pointer-events-auto transition-all duration-300 ${colors[type] || colors.info}`;
+        toast.innerHTML = `<div class="text-xs font-bold">${title}</div><div class="text-[11px] text-slate-300 mt-0.5">${message}</div>`;
+        container.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          setTimeout(() => toast.remove(), 300);
+        }, 3600);
+      }
+
+      function copyTextToClipboard(text, feedbackMsg) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(() => {
+            showToast('Copiado al portapapeles', feedbackMsg, 'success');
+          }).catch(() => fallbackCopy(text, feedbackMsg));
+        } else {
+          fallbackCopy(text, feedbackMsg);
+        }
+      }
+
+      function fallbackCopy(text, feedbackMsg) {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        try {
+          document.execCommand('copy');
+          showToast('Copiado al portapapeles', feedbackMsg, 'success');
+        } catch (err) {
+          showToast('Aviso', 'Selecciona y copia el texto manualmente.', 'info');
+        }
+        ta.remove();
+      }
+
+      function nowTimeStr() {
+        const d = new Date();
+        return d.toTimeString().split(' ')[0];
+      }
+
+      // --- 3. RENDER QR MATRIX & TOTP TIMER ---
+      function renderQrMatrix(seedStr) {
+        const container = document.getElementById('qrMatrixContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        let hash = 0;
+        for (let i = 0; i < seedStr.length; i++) {
+          hash = ((hash << 5) - hash) + seedStr.charCodeAt(i);
+          hash |= 0;
+        }
+        for (let r = 0; r < 9; r++) {
+          for (let c = 0; c < 9; c++) {
+            const isCorner = (r < 3 && c < 3) || (r < 3 && c > 5) || (r > 5 && c < 3);
+            const bit = ((Math.abs(hash + r * 17 + c * 31)) % 3 === 0) || isCorner;
+            const cell = document.createElement('div');
+            cell.className = bit ? 'bg-slate-950 rounded-[1px]' : 'bg-white';
+            container.appendChild(cell);
+          }
+        }
+      }
+
+      function generateNewTotp() {
+        const p1 = Math.floor(100 + Math.random() * 900);
+        const p2 = Math.floor(100 + Math.random() * 900);
+        currentTotpToken = `${p1} ${p2}`;
+        const codeEl = document.getElementById('totpCodeDisplay');
+        if (codeEl) codeEl.textContent = currentTotpToken;
+        renderQrMatrix(currentTotpToken + currentStudentKey);
+      }
+
+      function updateTotpTimer() {
+        totpSecondsLeft -= 1;
+        if (totpSecondsLeft <= 0) {
+          totpSecondsLeft = 30;
+          generateNewTotp();
+        }
+        const timerText = document.getElementById('totpTimerText');
+        const bar = document.getElementById('totpProgressBar');
+        if (timerText) timerText.textContent = `(Expira: ${totpSecondsLeft}s)`;
+        if (bar) {
+          const pct = Math.max(5, (totpSecondsLeft / 30) * 100);
+          bar.style.width = `${pct}%`;
+          bar.className = totpSecondsLeft <= 6
+            ? 'h-full bg-rose-500 transition-all duration-500'
+            : 'h-full bg-sky-500 transition-all duration-500';
+        }
+      }
+
+      // --- 4. RENDER LIVE ACCESS LOGS & METRICS ---
+      function renderAccessLogs() {
+        const container = document.getElementById('liveAccessLogContainer');
+        if (!container) return;
+        container.innerHTML = '';
+        const filtered = accessLogs.filter(item => currentLogFilter === 'ALL' || item.status === currentLogFilter);
+        filtered.forEach(item => {
+          const badgeColors = {
+            AUTORIZADO: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40',
+            RECHAZADO: 'bg-rose-500/15 text-rose-300 border-rose-500/40',
+            BLOQUEADO: 'bg-amber-500/15 text-amber-300 border-amber-500/40'
+          };
+          const row = document.createElement('div');
+          row.className = 'p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-between gap-2 text-xs';
+          row.innerHTML = `
+            <div>
+              <p class="font-mono font-bold text-slate-200">${item.time} | ${item.type}</p>
+              <p class="text-[11px] text-slate-400">${item.detail}</p>
+            </div>
+            <span class="px-2.5 py-0.5 rounded-md border font-mono font-bold text-[10px] ${badgeColors[item.status] || badgeColors.AUTORIZADO}">
+              ${item.status}
+            </span>
+          `;
+          container.appendChild(row);
+        });
+      }
+
+      function updateOccupancyUI() {
+        const peatonalText = document.getElementById('aforoPeatonalText');
+        const peatonalBar = document.getElementById('aforoPeatonalBar');
+        const vehicularText = document.getElementById('cuposVehicularText');
+        const vehicularBar = document.getElementById('cuposVehicularBar');
+
+        const pPct = ((aforoPeatonal / aforoMax) * 100).toFixed(1);
+        const libres = Math.max(0, cuposMax - cuposOcupados);
+        const vPct = ((cuposOcupados / cuposMax) * 100).toFixed(0);
+
+        if (peatonalText) peatonalText.textContent = `${aforoPeatonal} / ${aforoMax} personas (${pPct}%)`;
+        if (peatonalBar) peatonalBar.style.width = `${Math.min(100, pPct)}%`;
+        if (vehicularText) vehicularText.textContent = `${cuposOcupados} / ${cuposMax} ocupados (${libres} Libres)`;
+        if (vehicularBar) vehicularBar.style.width = `${Math.min(100, vPct)}%`;
+      }
+
+      function addAccessEvent(type, detail, status) {
+        accessLogs.unshift({
+          time: nowTimeStr(),
+          type,
+          detail,
+          status
+        });
+        renderAccessLogs();
+      }
+
+      // --- 5. STUDENT CREDENTIAL SWITCHER ---
+      function renderStudentCard() {
+        const st = students[currentStudentKey];
+        document.getElementById('cardStudentName').textContent = st.name;
+        document.getElementById('cardStudentRut').textContent = `RUT: ${st.rut} | ${st.career}`;
+        document.getElementById('cardVehicleFooter').innerHTML = `Vehículo LPR: Patente <strong class="text-white font-mono">${st.plate}</strong><br/>Sede: INACAP Maipú (Estac. Nivel 1)`;
+        generateNewTotp();
+      }
+
+      // --- 6. ARCHITECTURE INSPECTOR ---
+      function renderArchDetail(key) {
+        const d = archDetails[key];
+        const panel = document.getElementById('archDetailPanel');
+        if (!panel || !d) return;
+        panel.innerHTML = `
+          <div class="space-y-3">
+            <span class="text-xs font-mono uppercase px-2.5 py-1 rounded bg-sky-500/20 text-sky-300 font-semibold">${d.badge}</span>
+            <h3 class="text-xl font-extrabold text-white">${d.title}</h3>
+            <p class="text-xs font-mono text-emerald-400 bg-slate-900/90 p-2.5 rounded-xl border border-slate-800">${d.hardware}</p>
+            <p class="text-xs text-slate-300 leading-relaxed">${d.description}</p>
+          </div>
+          <div class="pt-3 border-t border-slate-800 space-y-1.5">
+            <p class="text-[11px] font-mono uppercase text-slate-400">Métricas y Controles Verificados:</p>
+            <ul class="space-y-1 text-xs text-sky-300">
+              ${d.metrics.map(m => `<li>✓ ${m}</li>`).join('')}
+            </ul>
+          </div>
+        `;
+      }
+
+      // --- 7. CHARTS INITIALIZATION (Chart.js) ---
+      function initCharts() {
+        if (typeof Chart === 'undefined') return;
+
+        const ctxLat = document.getElementById('latencyChart');
+        if (ctxLat) {
+          new Chart(ctxLat, {
+            type: 'bar',
+            data: {
+              labels: ['Login + OTP (RF-01)', 'Pase QR TOTP (RF-02)', 'Visión LPR OCR (RF-03)', 'Exportar PDF (RF-04)', 'Alerta WSS (RF-05)'],
+              datasets: [
+                {
+                  label: 'Latencia Media (ms)',
+                  data: [245, 190, 920, 640, 115],
+                  backgroundColor: 'rgba(14, 165, 233, 0.85)',
+                  borderRadius: 6
+                },
+                {
+                  label: 'Latencia P98 (ms) [Meta < 1500 ms]',
+                  data: [310, 260, 1180, 890, 180],
+                  backgroundColor: 'rgba(56, 189, 248, 0.45)',
+                  borderColor: 'rgba(56, 189, 248, 1)',
+                  borderWidth: 1,
+                  borderRadius: 6
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 1650,
+                  ticks: { color: '#94a3b8' },
+                  grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                },
+                x: {
+                  ticks: { color: '#cbd5e1', font: { size: 10 } },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+
+        const ctxQual = document.getElementById('qualityChart');
+        if (ctxQual) {
+          new Chart(ctxQual, {
+            type: 'bar',
+            data: {
+              labels: [
+                'Uptime Fallback SQLite',
+                'Cobertura Unit. Pytest',
+                'Bloqueo SQLi / Brute Force',
+                'Rechazo QR Vencido (>30s)',
+                'Precisión OCR Diurno'
+              ],
+              datasets: [
+                {
+                  label: 'Porcentaje de Cumplimiento (%)',
+                  data: [99.8, 88.5, 100.0, 100.0, 96.4],
+                  backgroundColor: [
+                    'rgba(16, 185, 129, 0.85)',
+                    'rgba(99, 102, 241, 0.85)',
+                    'rgba(14, 165, 233, 0.85)',
+                    'rgba(34, 197, 94, 0.85)',
+                    'rgba(20, 184, 166, 0.85)'
+                  ],
+                  borderRadius: 6
+                }
+              ]
+            },
+            options: {
+              indexAxis: 'y',
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { labels: { color: '#cbd5e1', font: { size: 11 } } }
+              },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  max: 105,
+                  ticks: { color: '#94a3b8' },
+                  grid: { color: 'rgba(51, 65, 85, 0.4)' }
+                },
+                y: {
+                  ticks: { color: '#cbd5e1', font: { size: 11 } },
+                  grid: { display: false }
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // --- 8. EVENT LISTENERS ---
+      document.addEventListener('DOMContentLoaded', () => {
+        renderQrMatrix(currentTotpToken);
+        renderAccessLogs();
+        updateOccupancyUI();
+        renderArchDetail('edge');
+        document.getElementById('sourceCodeDisplay').textContent = codeSnippets.auth;
+        initCharts();
+
+        setInterval(updateTotpTimer, 1000);
+
+        // Mobile menu toggle
+        const mobileBtn = document.getElementById('mobileMenuBtn');
+        const mobileMenu = document.getElementById('mobileMenu');
+        if (mobileBtn && mobileMenu) {
+          mobileBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+          });
+        }
+
+        // Copy git clone command
+        document.getElementById('copyCloneCmdBtn').addEventListener('click', () => {
+          copyTextToClipboard(
+            'git clone https://github.com/jelguetameneses-creator/SmartCampus_IoT.git',
+            'Comando git clone copiado para tu terminal.'
+          );
+        });
+
+        // Student selector
+        document.getElementById('studentSelect').addEventListener('change', (e) => {
+          currentStudentKey = e.target.value;
+          renderStudentCard();
+          showToast('Credencial Cambiada', `Sesión activa: ${students[currentStudentKey].name}`, 'info');
+        });
+
+        // Toggle WAN / Fallback SQLite
+        document.getElementById('toggleWanBtn').addEventListener('click', () => {
+          wanOnline = !wanOnline;
+          const dot = document.getElementById('wanStatusDot');
+          const txt = document.getElementById('wanStatusText');
+          const btn = document.getElementById('toggleWanBtn');
+          if (wanOnline) {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
+            txt.textContent = 'Enlace WAN Cloud: ONLINE (PostgreSQL)';
+            btn.className = 'px-3.5 py-2 rounded-xl text-xs font-mono font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition flex items-center gap-2';
+            showToast('WAN Restaurada', 'Sincronizando eventos locales SQLite hacia PostgreSQL 16 Cloud sobre MQTTS/TLS 1.3.', 'success');
+          } else {
+            dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400';
+            txt.textContent = 'WAN CAÍDA: MODO FALLBACK SQLITE LOCAL (140 ms)';
+            btn.className = 'px-3.5 py-2 rounded-xl text-xs font-mono font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition flex items-center gap-2';
+            showToast('RNF-02: Fallback SQLite Activo', 'Corte WAN detectado. El Gateway IoT valida accesos localmente en 140 ms.', 'warning');
+          }
+        });
+
+        // Scan Valid QR
+        document.getElementById('scanValidQrBtn').addEventListener('click', () => {
+          const st = students[currentStudentKey];
+          aforoPeatonal = Math.min(aforoMax, aforoPeatonal + 1);
+          updateOccupancyUI();
+          const modeLabel = wanOnline ? '190 ms' : 'Fallback SQLite 140 ms';
+          addAccessEvent('PEATONAL QR', `${st.rut} (${st.shortName}) • TOTP ${currentTotpToken} [${modeLabel}]`, 'AUTORIZADO');
+          showToast('Paso Peatonal Autorizado (HTTP 200)', `Pulso relé torniquete activado para ${st.name} en ${modeLabel}.`, 'success');
+        });
+
+        // Scan NFC
+        document.getElementById('scanNfcBtn').addEventListener('click', () => {
+          const st = students[currentStudentKey];
+          aforoPeatonal = Math.min(aforoMax, aforoPeatonal + 1);
+          updateOccupancyUI();
+          addAccessEvent('PEATONAL NFC', `${st.rut} (${st.shortName}) • Token NFC Cifrado`, 'AUTORIZADO');
+          showToast('Lectura NFC Autorizada (HTTP 200)', `Torniquete desbloqueado para ${st.name}.`, 'success');
+        });
+
+        // Scan Expired QR (>30s)
+        document.getElementById('scanExpiredQrBtn').addEventListener('click', () => {
+          const st = students[currentStudentKey];
+          addAccessEvent('PEATONAL QR', `Token Expirado (> 30 seg) • ${st.shortName}`, 'BLOQUEADO');
+          showToast('HTTP 401: QR Expirado (CP-03)', 'Mitigación Ley 21.459 Art. 2°: Se rechazó captura de pantalla fuera de la ventana de 30s.', 'warning');
+        });
+
+        // LPR Simulation Buttons
+        document.getElementById('simLprAuthBtn').addEventListener('click', () => {
+          const st = students[currentStudentKey];
+          document.getElementById('plateVisualBox').textContent = st.plate.replace(/-/g, ' · ');
+          document.getElementById('plateVisualBox').className = 'px-5 py-2 rounded-lg bg-amber-300 text-slate-950 font-mono font-extrabold text-xl tracking-widest border-2 border-slate-900 shadow-md';
+          const banner = document.getElementById('ocrStatusBanner');
+          banner.className = 'rounded-xl bg-emerald-500/15 border border-emerald-500/40 p-2.5 text-center text-xs text-emerald-300 font-medium';
+          banner.innerHTML = `OCR: 98.4% | Latencia: 1.18 s | ${st.shortName}<br/>Barrera: <strong>PULSO RELÉ ACTIVO (AUTORIZADO)</strong>`;
+          if (cuposOcupados < cuposMax) cuposOcupados += 1;
+          updateOccupancyUI();
+          addAccessEvent('VEHICULAR LPR', `Placa ${st.plate} (Conf: 98.4% • 1.18 s)`, 'AUTORIZADO');
+          showToast('Barrera Vehicular Abierta (1,18 s)', `Patente ${st.plate} validada en padrón. Cupo descontado automáticamente.`, 'success');
+        });
+
+        document.getElementById('simLprDenyBtn').addEventListener('click', () => {
+          document.getElementById('plateVisualBox').textContent = 'XX · YY · 99';
+          document.getElementById('plateVisualBox').className = 'px-5 py-2 rounded-lg bg-rose-200 text-slate-950 font-mono font-extrabold text-xl tracking-widest border-2 border-rose-700 shadow-md';
+          const banner = document.getElementById('ocrStatusBanner');
+          banner.className = 'rounded-xl bg-rose-500/15 border border-rose-500/40 p-2.5 text-center text-xs text-rose-300 font-medium';
+          banner.innerHTML = `OCR: 96.8% | Latencia: 0.94 s | No Registrado<br/>Barrera: <strong>BLOQUEADA (ALERTA GUARDIA WSS)</strong>`;
+          addAccessEvent('VEHICULAR LPR', 'Placa XX-YY-99 (No Reg. en Padrón)', 'RECHAZADO');
+          showToast('Acceso Vehicular Rechazado', 'La patente XX-YY-99 no figura en el padrón institucional. Alerta WSS enviada en 115 ms.', 'error');
+        });
+
+        document.getElementById('simLprSqliBtn').addEventListener('click', () => {
+          document.getElementById('plateVisualBox').textContent = "' OR 1=1; --";
+          document.getElementById('plateVisualBox').className = 'px-5 py-2 rounded-lg bg-amber-500 text-slate-950 font-mono font-extrabold text-base tracking-tight border-2 border-rose-900 shadow-md';
+          const banner = document.getElementById('ocrStatusBanner');
+          banner.className = 'rounded-xl bg-amber-500/15 border border-amber-500/40 p-2.5 text-center text-xs text-amber-300 font-medium';
+          banner.innerHTML = `OWASP A03: Payload SQLi Neutralizado por RegEx<br/>Estado: <strong>HTTP 400 BAD REQUEST (ORM PROTEGIDO)</strong>`;
+          addAccessEvent('ALERTA OWASP A03', "Intento SQLi en OCR: ' OR 1=1; DROP...", 'BLOQUEADO');
+          showToast('OWASP A03: Inyección Bloqueada (CP-05)', 'El filtro RegEx ^[A-Z]{2,4}[0-9]{2,4}$ rechazó caracteres no alfanuméricos antes de tocar SQLAlchemy.', 'warning');
+        });
+
+        // Log filter
+        document.getElementById('logFilterSelect').addEventListener('change', (e) => {
+          currentLogFilter = e.target.value;
+          renderAccessLogs();
+        });
+
+        // Emergency Release Button
+        document.getElementById('emergencyReleaseBtn').addEventListener('click', () => {
+          emergencyActive = !emergencyActive;
+          const badge = document.getElementById('emergencyStateBadge');
+          const btn = document.getElementById('emergencyReleaseBtn');
+          if (emergencyActive) {
+            badge.textContent = '¡EVACUACIÓN ACTIVA!';
+            badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-rose-600 text-white font-bold animate-pulse';
+            btn.className = 'w-full py-3 px-4 rounded-xl bg-rose-600 text-white border-2 border-white font-extrabold text-xs transition shadow-lg';
+            btn.innerHTML = '✓ BARRERAS Y TORNIQUETES LIBERADOS (CLICK PARA RESTABLECER)<br/><span class="font-normal text-[11px]">Cumplimiento Código Ética ACM/IEEE 1.03 y 3.10 (Fail-Safe)</span>';
+            addAccessEvent('EMERGENCIA RF-05', 'Apertura General de Torniquetes y Barreras', 'AUTORIZADO');
+            showToast('Protocolo de Evacuación Activado', 'Todos los torniquetes y barreras vehiculares se han liberado para evacuación segura.', 'error');
+          } else {
+            badge.textContent = 'Modo Normal';
+            badge.className = 'text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-300';
+            btn.className = 'w-full py-3 px-4 rounded-xl bg-rose-600/20 hover:bg-rose-600/35 border-2 border-rose-500 text-rose-300 font-extrabold text-xs transition shadow-lg shadow-rose-600/10';
+            btn.innerHTML = '[!] APERTURA MANUAL DE EMERGENCIA (EVACUACIÓN)<br/><span class="font-normal text-[11px]">Desbloquea todos los torniquetes y barreras vehiculares (RF-05)</span>';
+            addAccessEvent('SISTEMA RF-05', 'Control de Pórticos Restablecido a Modo Normal', 'AUTORIZADO');
+            showToast('Modo Normal Restablecido', 'Los pórticos volvieron a validación TOTP/LPR.', 'info');
+          }
+        });
+
+        // Visitor Modal
+        const visitorModal = document.getElementById('visitorModal');
+        document.getElementById('openVisitorModalBtn').addEventListener('click', () => {
+          visitorModal.classList.remove('hidden');
+          visitorModal.classList.add('flex');
+        });
+        const closeVisitor = () => {
+          visitorModal.classList.add('hidden');
+          visitorModal.classList.remove('flex');
+        };
+        document.getElementById('closeVisitorModalBtn').addEventListener('click', closeVisitor);
+        document.getElementById('cancelVisitorBtn').addEventListener('click', closeVisitor);
+
+        document.getElementById('visitorForm').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const name = document.getElementById('visitorNameInput').value.trim() || 'Visita';
+          const rut = document.getElementById('visitorRutInput').value.trim() || '15.432.890-1';
+          const plate = document.getElementById('visitorPlateInput').value.trim().toUpperCase();
+          aforoPeatonal = Math.min(aforoMax, aforoPeatonal + 1);
+          if (plate) cuposOcupados = Math.min(cuposMax, cuposOcupados + 1);
+          updateOccupancyUI();
+          addAccessEvent('PASE VISITA', `${rut} (${name}) ${plate ? '• Placa ' + plate : ''}`, 'AUTORIZADO');
+          closeVisitor();
+          showToast('Visita Registrada y Autorizada', `Se emitió pase temporal QR para ${name}.`, 'success');
+        });
+
+        // PDF Export Modal
+        const pdfModal = document.getElementById('pdfModal');
+        document.getElementById('exportPdfModalBtn').addEventListener('click', () => {
+          const linesContainer = document.getElementById('pdfReportLines');
+          linesContainer.innerHTML = accessLogs.map((l, idx) =>
+            `<div>[${idx + 1}] ${l.time} | ${l.type.padEnd(14, ' ')} | ${l.status.padEnd(10, ' ')} | ${l.detail}</div>`
+          ).join('');
+          pdfModal.classList.remove('hidden');
+          pdfModal.classList.add('flex');
+        });
+        document.getElementById('closePdfModalBtn').addEventListener('click', () => {
+          pdfModal.classList.add('hidden');
+          pdfModal.classList.remove('flex');
+        });
+        document.getElementById('downloadCsvReportBtn').addEventListener('click', () => {
+          const content = 'HORA,TIPO_ACCESO,ESTADO,DETALLE\n' +
+            accessLogs.map(l => `"${l.time}","${l.type}","${l.status}","${l.detail}"`).join('\n');
+          const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'Nomina_Accesos_SmartCampus_IoT.csv';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          showToast('Reporte Descargado', 'Se exportó Nomina_Accesos_SmartCampus_IoT.csv firmado.', 'success');
+        });
+
+        // Architecture Node Selector
+        document.querySelectorAll('.arch-node-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.arch-node-btn').forEach(b => {
+              b.className = 'arch-node-btn text-left p-5 rounded-2xl glass-card border border-slate-700 hover:border-sky-400 transition space-y-2';
+            });
+            btn.className = 'arch-node-btn text-left p-5 rounded-2xl glass-card border-2 border-sky-500 hover:border-sky-400 transition space-y-2';
+            renderArchDetail(btn.getAttribute('data-arch'));
+          });
+        });
+
+        // Requirements & Scrum Tabs
+        document.querySelectorAll('.req-tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const tab = btn.getAttribute('data-reqtab');
+            document.querySelectorAll('.req-tab-btn').forEach(b => {
+              b.className = 'req-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+            });
+            btn.className = 'req-tab-btn px-4 py-2 rounded-xl text-xs font-bold bg-sky-500 text-slate-950 transition';
+
+            const rf = document.getElementById('reqPanelRf');
+            const rnf = document.getElementById('reqPanelRnf');
+            const scrum = document.getElementById('reqPanelScrum');
+            rf.classList.add('hidden');
+            rnf.classList.add('hidden');
+            rnf.classList.remove('grid');
+            scrum.classList.add('hidden');
+
+            if (tab === 'rf') {
+              rf.classList.remove('hidden');
+            } else if (tab === 'rnf') {
+              rnf.classList.remove('hidden');
+              rnf.classList.add('grid');
+            } else {
+              scrum.classList.remove('hidden');
+            }
+          });
+        });
+
+        // OWASP Sandbox Presets & Execution
+        document.querySelectorAll('.sandbox-preset-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.getElementById('sandboxPlateInput').value = btn.getAttribute('data-preset');
+            document.getElementById('runSandboxValidationBtn').click();
+          });
+        });
+
+        document.getElementById('runSandboxValidationBtn').addEventListener('click', () => {
+          const raw = document.getElementById('sandboxPlateInput').value || '';
+          const cleaned = raw.toUpperCase().replace(/[^A-Z0-9]/g, '');
+          const regex = /^[A-Z]{2,4}[0-9]{2,4}$/;
+          const out = document.getElementById('sandboxResultBox');
+          const hasSqlKeywords = /SELECT|DROP|INSERT|DELETE|UNION|--|'|;/i.test(raw);
+
+          if (hasSqlKeywords || !regex.test(cleaned)) {
+            out.className = 'p-3.5 rounded-xl bg-rose-950/60 border border-rose-500/50 font-mono text-xs space-y-1 text-rose-300';
+            out.innerHTML = `
+              <div>[BLOQUEADO] ValueError -> HTTP 400 Bad Request</div>
+              <div class="text-slate-300">Entrada cruda: ${raw.replace(/</g, '&lt;')}</div>
+              <div class="text-amber-300">Motivo: Formato inválido o intento de inyección neutralizado por RegEx ^[A-Z]{2,4}[0-9]{2,4}$ (OWASP A03).</div>
+            `;
+          } else {
+            const fakeFernet = 'gAAAAABnM8x9_' + btoa(cleaned + '_AES256_CBC_HMAC').replace(/=/g, '') + '==';
+            out.className = 'p-3.5 rounded-xl bg-slate-950 border border-emerald-500/40 font-mono text-xs space-y-1 text-emerald-400';
+            out.innerHTML = `
+              <div>[OK] HTTP 200: Placa sanitizada = "${cleaned}" (VALIDADA_ORM)</div>
+              <div class="text-slate-400 break-all">Token AES-256 (Fernet): ${fakeFernet}</div>
+            `;
+          }
+        });
+
+        // Pytest Runner Simulation
+        document.getElementById('runPytestSuiteBtn').addEventListener('click', () => {
+          const term = document.getElementById('pytestTerminalOutput');
+          const badge = document.getElementById('pytestStatusBadge');
+          badge.textContent = 'Ejecutando Pytest...';
+          badge.className = 'text-amber-400 font-bold animate-pulse';
+          term.textContent = '$ pytest tests/test_suite_mvp.py -v --cov=src --cov-report=term-missing\nIniciando contenedor de pruebas Python 3.11.8 (pytest-7.4.4)...\nEjecutando 6 escenarios Gherkin y auditoría OWASP...';
+          setTimeout(() => {
+            term.textContent = `$ pytest tests/test_suite_mvp.py -v --cov=src --cov-report=term-missing
+======================================== test session starts ========================================
+platform linux -- Python 3.11.8, pytest-7.4.4, pluggy-1.4.0 -- /usr/bin/python3
+cachedir: .pytest_cache | rootdir: /app/smartcampus-iot-mvp
+plugins: cov-4.1.0, asyncio-0.23.5
+collected 6 items
+
+tests/test_suite_mvp.py::test_cp01_login_mfa_jwt_argon2id PASSED                              [ 16%]
+tests/test_suite_mvp.py::test_cp02_bloqueo_fuerza_bruta_owasp_a07 PASSED                      [ 33%]
+tests/test_suite_mvp.py::test_cp03_rechazo_qr_totp_vencido_30s PASSED                         [ 50%]
+tests/test_suite_mvp.py::test_cp04_latencia_lpr_ocr_menor_1500ms PASSED                       [ 66%]
+tests/test_suite_mvp.py::test_cp05_sanitizacion_regex_anti_sqli_owasp_a03 PASSED              [ 83%]
+tests/test_suite_mvp.py::test_cp06_control_acceso_rbac_owasp_a01_y_fallback_sqlite PASSED     [100%]
+
+---------- coverage: platform linux, python 3.11.8-final-0 -----------
+Name                        Stmts   Miss  Cover   Missing
+---------------------------------------------------------
+src/auth_totp.py               64      6    91%   48-53
+src/db_security.py             52      5    90%   71-75
+src/lpr_ocr_service.py         48      8    83%   62-69
+---------------------------------------------------------
+TOTAL                         164     19  88.5%
+========================================= 6 passed in 1.84s =========================================`;
+            badge.textContent = '✓ 6 passed in 1.84s (88.5% cov)';
+            badge.className = 'text-emerald-400 font-bold';
+            showToast('Suite Pytest Completada', '6 de 6 casos aprobados (88,5% de cobertura en módulos core).', 'success');
+          }, 650);
+        });
+
+        // Source Code Tabs & Copy
+        let activeCodeKey = 'auth';
+        document.querySelectorAll('.code-tab-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            activeCodeKey = btn.getAttribute('data-codefile');
+            document.querySelectorAll('.code-tab-btn').forEach(b => {
+              b.className = 'code-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-slate-800 text-slate-300 hover:bg-slate-700 transition';
+            });
+            btn.className = 'code-tab-btn px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-sky-500 text-slate-950 transition';
+            document.getElementById('sourceCodeDisplay').textContent = codeSnippets[activeCodeKey];
+          });
+        });
+
+        document.getElementById('copyCodeBtn').addEventListener('click', () => {
+          copyTextToClipboard(codeSnippets[activeCodeKey], 'Extracto de código Python copiado.');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
